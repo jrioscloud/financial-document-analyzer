@@ -80,59 +80,48 @@
 
 ## Phase 2: Database Schema & Sample Data
 **Executor:** Claude Code | **Time:** 45 min
+**Status:** 🔄 IN PROGRESS
 
 ### 2.1 Database Schema
-- [ ] Create `backend/db/schema.sql`:
-  ```sql
-  CREATE EXTENSION IF NOT EXISTS vector;
+- [x] Create `backend/db/schema.sql` with multi-source support:
+  - schema_migrations table for version tracking
+  - transactions table with: amount_original, currency, source_bank, original_data (JSONB)
+  - chat_sessions and chat_messages tables
+  - Indexes for date, category, type, source, amount
+- [x] Create `backend/db/init.py` to run schema
+- [ ] Test: Schema creates successfully in Docker PostgreSQL *(manual)*
 
-  CREATE TABLE transactions (
-    id SERIAL PRIMARY KEY,
-    date DATE NOT NULL,
-    description TEXT NOT NULL,
-    amount DECIMAL(10,2) NOT NULL,
-    category TEXT,
-    type TEXT CHECK (type IN ('income', 'expense')),
-    embedding vector(1536),
-    source_file TEXT,
-    created_at TIMESTAMP DEFAULT NOW()
-  );
+### 2.2 Multi-Format CSV Parser
+- [x] Create `backend/utils/csv_parser.py` supporting:
+  - **Upwork:** Date,Type,Contract_Details,Client,Amount_USD,Status
+  - **Nu Bank Credit:** Fecha,Categoria,Descripcion,Monto,Tipo
+  - **Nu Bank Debit:** Fecha,Tipo,Descripcion,Monto,Cajita,Categoria
+  - **BBVA Credit:** Fecha_Operacion,Fecha_Cargo,Descripcion,Monto,Categoria
+  - **BBVA Debit:** Fecha,Descripcion,Monto,Saldo,Categoria,Tipo,Beneficiario
+- [x] Auto-detect source from headers + filename
+- [x] Normalize to common format (amount, currency, type)
+- [x] Preserve original data as JSONB
+- [x] Test: Upwork (63 txns) and Nu Bank (64 txns) parse correctly
 
-  CREATE TABLE chat_sessions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-  );
-
-  CREATE TABLE chat_messages (
-    id SERIAL PRIMARY KEY,
-    session_id UUID REFERENCES chat_sessions(id),
-    role TEXT CHECK (role IN ('user', 'assistant', 'system')),
-    content TEXT NOT NULL,
-    tools_used TEXT[],
-    created_at TIMESTAMP DEFAULT NOW()
-  );
-
-  CREATE INDEX ON transactions USING ivfflat (embedding vector_cosine_ops);
-  ```
-- [ ] Create `backend/db/init.py` to run schema
-- [ ] Test: Schema creates successfully in Docker PostgreSQL
-
-### 2.2 Sample Data (Anonymized)
+### 2.3 Sample Data (Anonymized)
 - [ ] Create `data/sample_transactions.csv` with anonymized data:
+  - Based on real CSV structure (compatible with parser)
   - 100-200 transactions
   - Categories: Food, Transport, Shopping, Bills, Entertainment, Income
-  - Date range: 6 months
-  - Amounts: Realistic but rounded
-- [ ] Create `backend/utils/csv_parser.py` to load CSV
-- [ ] Test: CSV loads into database
+  - Anonymize: merchant names, round amounts, shift dates
+- [ ] Test: Sample CSV loads into database
 
-### 2.3 Embedding Generation
-- [ ] Create `backend/utils/embeddings.py`:
-  - Function to generate embeddings via OpenAI
-  - Batch processing (avoid rate limits)
-  - Store in pgvector
-- [ ] Test: Sample transactions have embeddings
+### 2.4 Embedding Generation
+- [x] Create `backend/utils/embeddings.py`:
+  - `generate_embedding()` for single text
+  - `generate_embeddings_batch()` with batching
+  - `embed_transactions()` to add embeddings to parsed data
+- [ ] Test: Sample transactions have embeddings *(requires OpenAI key)*
+
+### 2.5 Database Migrations
+- [x] Add Alembic to requirements.txt
+- [x] schema_migrations table for tracking applied migrations
+- [ ] Setup Alembic config *(optional - schema.sql sufficient for MVP)*
 
 ---
 
