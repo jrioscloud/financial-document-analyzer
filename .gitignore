@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.env
+.venv/
+venv/
+
+# Node
+node_modules/
+.next/
+.vercel/
+
+# Data (sensitive)
+data/*.csv
+data/*.pdf
+!data/sample_transactions.csv
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
