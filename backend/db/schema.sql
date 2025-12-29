@@ -1,35 +1,67 @@
 -- Financial Document Analyzer - Database Schema
 -- PostgreSQL with pgvector extension
+-- Version: 001 (Initial schema)
 
 -- Enable pgvector extension
 CREATE EXTENSION IF NOT EXISTS vector;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- =============================================================================
--- Transactions Table (Core Data)
+-- Schema Migrations Table (Track applied migrations)
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS transactions (
-    id SERIAL PRIMARY KEY,
-    date DATE NOT NULL,
-    description TEXT NOT NULL,
-    amount DECIMAL(10,2) NOT NULL,
-    category TEXT,
-    type TEXT CHECK (type IN ('income', 'expense')),
-    embedding vector(1536),      -- OpenAI text-embedding-3-small dimension
-    source_file TEXT,            -- Track which file this came from
-    created_at TIMESTAMP DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS schema_migrations (
+    version VARCHAR(14) PRIMARY KEY,  -- YYYYMMDDHHMMSS format
+    name VARCHAR(255) NOT NULL,
+    applied_at TIMESTAMP DEFAULT NOW()
 );
 
--- Index for vector similarity search
-CREATE INDEX IF NOT EXISTS idx_transactions_embedding
-ON transactions USING ivfflat (embedding vector_cosine_ops)
-WITH (lists = 100);
+-- =============================================================================
+-- Transactions Table (Core Data - Multi-Source Compatible)
+-- =============================================================================
+-- Supports: Upwork, Nu Bank (Credit/Debit), BBVA (Credit/Debit)
+CREATE TABLE IF NOT EXISTS transactions (
+    id SERIAL PRIMARY KEY,
 
--- Index for date range queries
+    -- Core fields (normalized from all sources)
+    date DATE NOT NULL,
+    description TEXT NOT NULL,
+    amount DECIMAL(12,2) NOT NULL,        -- Positive = income, Negative = expense
+    amount_original DECIMAL(12,2),         -- Original amount before normalization
+    currency VARCHAR(3) DEFAULT 'USD',     -- USD, MXN
+
+    -- Classification
+    category TEXT,                         -- Food, Transport, Income, etc.
+    type TEXT CHECK (type IN ('income', 'expense', 'transfer')),
+
+    -- Source tracking
+    source_bank VARCHAR(50),               -- upwork, nu_credit, nu_debit, bbva_credit, bbva_debit
+    source_file TEXT,                      -- Original filename
+
+    -- Original fields preserved (for debugging/audit)
+    original_data JSONB,                   -- Store all original CSV columns
+
+    -- RAG/Embedding
+    embedding vector(1536),                -- OpenAI text-embedding-3-small dimension
+
+    -- Metadata
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Index for vector similarity search (requires >= 100 rows to build)
+-- Will be created after data is loaded
+-- CREATE INDEX IF NOT EXISTS idx_transactions_embedding
+-- ON transactions USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+
+-- Indexes for common queries
 CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
-
--- Index for category filtering
 CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category);
+CREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(type);
+CREATE INDEX IF NOT EXISTS idx_transactions_source ON transactions(source_bank);
+CREATE INDEX IF NOT EXISTS idx_transactions_amount ON transactions(amount);
+
+-- Composite index for date range + category queries
+CREATE INDEX IF NOT EXISTS idx_transactions_date_category ON transactions(date, category);
 
 -- =============================================================================
 -- Chat Sessions Table (Conversation Memory)

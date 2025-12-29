@@ -56,14 +56,18 @@ class UploadResponse(BaseModel):
 # =============================================================================
 
 class Transaction(BaseModel):
-    """Single transaction record."""
+    """Single transaction record (multi-source compatible)."""
     id: Optional[int] = None
     date: date
     description: str
-    amount: float
+    amount: float                          # Normalized (positive=income, negative=expense)
+    amount_original: Optional[float] = None
+    currency: str = "USD"                  # USD or MXN
     category: Optional[str] = None
-    type: str  # 'income' or 'expense'
+    type: str                              # 'income', 'expense', or 'transfer'
+    source_bank: Optional[str] = None      # upwork, nu_credit, nu_debit, bbva_credit, bbva_debit
     source_file: Optional[str] = None
+    original_data: Optional[dict] = None   # Preserved original CSV columns
 
 
 class TransactionList(BaseModel):
