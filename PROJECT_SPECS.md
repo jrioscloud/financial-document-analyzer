@@ -28,14 +28,17 @@ Build a RAG-powered chatbot that analyzes financial documents (CSV/PDF), answers
 
 ## Tech Stack
 
-| Layer | Technology | Why (Job Mentions) |
-|-------|------------|-------------------|
-| Frontend | Next.js 14 + Tailwind + shadcn/ui | 753 mentions |
-| Backend | FastAPI + Python | 368 + 105 mentions |
-| AI Framework | LangChain + LangGraph | +77% growth |
-| Database | PostgreSQL + pgvector | 131 mentions |
-| LLM | OpenAI GPT-4 (or Claude API) | - |
-| Deploy | Vercel (frontend) + AWS Lambda (backend) | 828 mentions |
+| Layer | Technology | Why (Capturely Data - Dec 2025) |
+|-------|------------|--------------------------------|
+| Frontend | Next.js 14 + Tailwind + shadcn/ui | 709 mentions (8.5% of jobs) |
+| Backend | FastAPI + Python | 105 + 371 mentions |
+| AI Framework | LangChain + LangGraph | RAG: 93 mentions (growing) |
+| Database | PostgreSQL + pgvector | 133 mentions |
+| LLM | OpenAI gpt-4o-mini (cost) or Claude | - |
+| Deploy | Vercel (frontend) + Supabase (DB) | 51 + 201 mentions |
+| IaC | Terraform (optional AWS path) | 65 mentions (differentiator) |
+
+**Market Positioning Note:** Clients say "RAG" (93 mentions) not "LangChain" (13 mentions). Lead with RAG in portfolio description.
 
 ---
 
@@ -49,14 +52,34 @@ For public demo, data will be **anonymized**:
 - Dates: Shifted
 
 **Schema:**
-```
+```sql
+-- Core transaction data
 transactions (
   id SERIAL PRIMARY KEY,
-  date DATE,
-  description TEXT,
-  amount DECIMAL,
+  date DATE NOT NULL,
+  description TEXT NOT NULL,
+  amount DECIMAL(10,2) NOT NULL,
   category TEXT,
-  type TEXT  -- 'income' | 'expense'
+  type TEXT CHECK (type IN ('income', 'expense')),
+  embedding vector(1536),      -- pgvector for RAG
+  source_file TEXT,            -- track upload source
+  created_at TIMESTAMP DEFAULT NOW()
+)
+
+-- Session memory (conversation history)
+chat_sessions (
+  id UUID PRIMARY KEY,
+  created_at TIMESTAMP,
+  updated_at TIMESTAMP
+)
+
+chat_messages (
+  id SERIAL PRIMARY KEY,
+  session_id UUID REFERENCES chat_sessions(id),
+  role TEXT CHECK (role IN ('user', 'assistant', 'system')),
+  content TEXT NOT NULL,
+  tools_used TEXT[],           -- track which tools were called
+  created_at TIMESTAMP
 )
 ```
 
@@ -121,34 +144,55 @@ GET /api/health
 ```
 financial-document-analyzer/
 ├── PROJECT_SPECS.md          # This file
+├── IMPLEMENTATION_PLAN.md    # Detailed checklist
 ├── README.md                 # Public-facing docs
+├── docker-compose.yml        # Local dev (PostgreSQL + pgvector)
+├── .env.example              # Environment variables template
+│
 ├── backend/
-│   ├── main.py              # FastAPI app
-│   ├── agent.py             # LangChain agent + tools
-│   ├── embeddings.py        # pgvector operations
+│   ├── main.py              # FastAPI app entry point
 │   ├── models.py            # Pydantic schemas
-│   └── requirements.txt
+│   ├── requirements.txt
+│   ├── agent/               # LangChain agent module
+│   │   ├── agent.py         # Agent setup + system prompt
+│   │   ├── tools.py         # 5 tool definitions
+│   │   ├── memory.py        # Session-based memory
+│   │   └── retriever.py     # pgvector RAG retriever
+│   ├── db/
+│   │   ├── schema.sql       # Database schema
+│   │   └── init.py          # Schema initialization
+│   └── utils/
+│       ├── csv_parser.py    # CSV transaction parser
+│       └── embeddings.py    # OpenAI embedding generation
+│
 ├── frontend/
 │   ├── app/
-│   │   ├── page.tsx         # Chat UI
-│   │   └── api/             # Next.js API routes (proxy)
+│   │   ├── page.tsx         # Main chat page
+│   │   └── layout.tsx       # App layout
 │   ├── components/
-│   │   ├── ChatWidget.tsx
-│   │   ├── FileUpload.tsx
-│   │   └── TransactionList.tsx
+│   │   ├── ChatWidget.tsx   # Message list + bubbles
+│   │   ├── ChatInput.tsx    # Input + send button
+│   │   └── FileUpload.tsx   # Drag-drop CSV upload
+│   ├── lib/
+│   │   └── api.ts           # API client functions
 │   └── package.json
+│
 ├── data/
 │   └── sample_transactions.csv  # Anonymized demo data
-├── docker-compose.yml        # Local dev
+│
+├── scripts/
+│   └── ingest.py            # Local file watcher (optional)
+│
 └── deploy/
-    ├── terraform/           # IaC for ingestion pipeline
+    ├── terraform/           # AWS infrastructure (Option B)
     │   ├── main.tf
     │   ├── ingestion.tf     # S3 + Lambda trigger
-    │   └── variables.tf
+    │   ├── variables.tf
+    │   └── outputs.tf
     ├── lambda/              # Lambda function code
-    │   ├── handler.py
+    │   ├── handler.py       # Mangum adapter for FastAPI
     │   └── requirements.txt
-    └── vercel.json          # Vercel config
+    └── vercel.json          # Vercel config (Option A)
 ```
 
 ---

@@ -42,17 +42,19 @@
 - [ ] Create `backend/` folder structure
 - [ ] Create `backend/requirements.txt` with dependencies:
   ```
-  fastapi==0.109.0
-  uvicorn==0.27.0
-  langchain==0.1.0
-  langchain-openai==0.0.2
-  langchain-community==0.0.10
-  pgvector==0.2.4
-  psycopg2-binary==2.9.9
-  python-multipart==0.0.6
-  pydantic==2.5.3
-  python-dotenv==1.0.0
+  fastapi>=0.115.0
+  uvicorn>=0.32.0
+  langchain>=0.3.0
+  langchain-openai>=0.2.0
+  langchain-community>=0.3.0
+  langgraph>=0.2.0
+  pgvector>=0.3.0
+  psycopg2-binary>=2.9.9
+  python-multipart>=0.0.12
+  pydantic>=2.9.0
+  python-dotenv>=1.0.0
   ```
+  Note: Use `>=` to get latest compatible versions. Pin exact versions before deployment.
 - [ ] Create `backend/.env.example`
 - [ ] Test: `pip install -r requirements.txt` succeeds
 
