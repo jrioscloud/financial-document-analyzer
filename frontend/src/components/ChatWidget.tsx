@@ -15,47 +15,53 @@ interface ChatWidgetProps {
 // Tool icon mapping for visual feedback
 const toolIcons: Record<string, React.ReactNode> = {
   search_transactions: (
-    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
     </svg>
   ),
   analyze_spending: (
-    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
     </svg>
   ),
   compare_periods: (
-    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
     </svg>
   ),
   categorize_transaction: (
-    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
     </svg>
   ),
   generate_report: (
-    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
     </svg>
   ),
 };
 
-function ToolBadge({ tool }: { tool: string }) {
-  const icon = toolIcons[tool] || (
-    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+// Inline tool indicator (shown at top of AI message)
+function InlineToolIndicator({ tools }: { tools: string[] }) {
+  if (!tools || tools.length === 0) return null;
+
+  const primaryTool = tools[0];
+  const icon = toolIcons[primaryTool] || (
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
     </svg>
   );
 
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg
-                    bg-brand-500/15 text-brand-400 border border-brand-500/20
-                    text-xs font-medium transition-all duration-200
-                    hover:bg-brand-500/20 hover:border-brand-500/30">
-      {icon}
-      <span>{tool}</span>
-    </span>
+    <div className="flex items-center gap-2 mb-3">
+      <div className="w-6 h-6 rounded-lg gradient-brand flex items-center justify-center text-white">
+        {icon}
+      </div>
+      <span className="text-xs text-muted-foreground">
+        Using {primaryTool.replace(/_/g, " ")} tool
+        {tools.length > 1 && ` +${tools.length - 1} more`}
+      </span>
+    </div>
   );
 }
 
@@ -198,61 +204,28 @@ function MessageBubble({ message, index }: { message: ChatMessage; index: number
       )}
       style={{ animationDelay: `${index * 0.05}s` }}
     >
-      <div className={cn("flex gap-3 max-w-[85%]", isUser && "flex-row-reverse")}>
-        {/* Avatar */}
-        <div
-          className={cn(
-            "flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center",
-            isUser
-              ? "bg-foreground text-background"
-              : "gradient-brand text-white glow-sm"
-          )}
-        >
-          {isUser ? (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          ) : (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-          )}
-        </div>
+      <div className={cn("max-w-[85%] lg:max-w-[75%]")}>
+        {/* User Message - Gradient Bubble */}
+        {isUser ? (
+          <div className="chat-bubble-user px-4 py-3 rounded-2xl rounded-br-md">
+            <p className="text-sm text-white">{message.content}</p>
+          </div>
+        ) : (
+          /* AI Message - Glass Bubble with Tool Indicator */
+          <div className="chat-bubble-ai px-4 py-3 rounded-2xl rounded-bl-md">
+            {/* Inline Tool Indicator */}
+            <InlineToolIndicator tools={message.tools_used || []} />
 
-        {/* Message Content */}
-        <div className="flex flex-col gap-2">
-          <div
-            className={cn(
-              "rounded-2xl transition-all duration-200",
-              isUser
-                ? "bg-foreground text-background rounded-tr-md px-4 py-3"
-                : "glass-strong rounded-tl-md",
-              // Wider padding for markdown reports
-              !isUser && hasMarkdown ? "px-5 py-4" : !isUser && "px-4 py-3"
-            )}
-          >
-            {isUser ? (
-              <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                {message.content}
-              </div>
-            ) : hasMarkdown ? (
+            {/* Message Content */}
+            {hasMarkdown ? (
               <MarkdownContent content={message.content} />
             ) : (
-              <div className="whitespace-pre-wrap text-sm leading-relaxed">
+              <p className="text-sm leading-relaxed text-foreground/90">
                 {message.content}
-              </div>
+              </p>
             )}
           </div>
-
-          {/* Tool Badges */}
-          {message.tools_used && message.tools_used.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 animate-fade-in">
-              {message.tools_used.map((tool, i) => (
-                <ToolBadge key={i} tool={tool} />
-              ))}
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );
@@ -261,24 +234,19 @@ function MessageBubble({ message, index }: { message: ChatMessage; index: number
 function LoadingIndicator() {
   return (
     <div className="flex justify-start mb-4 animate-fade-in">
-      <div className="flex gap-3">
-        {/* Avatar */}
-        <div className="flex-shrink-0 w-8 h-8 rounded-lg gradient-brand flex items-center justify-center glow-sm animate-pulse-soft">
-          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-        </div>
-
-        {/* Loading Bubble */}
-        <div className="glass-strong rounded-2xl rounded-tl-md px-5 py-4">
-          <div className="flex items-center gap-2">
-            <div className="flex gap-1">
-              <div className="w-2 h-2 bg-brand-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
-              <div className="w-2 h-2 bg-brand-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
-              <div className="w-2 h-2 bg-brand-500 rounded-full animate-bounce" />
-            </div>
-            <span className="text-xs text-muted-foreground ml-2">Analyzing...</span>
+      <div className="chat-bubble-ai px-4 py-4 rounded-2xl rounded-bl-md">
+        <div className="flex items-center gap-3">
+          <div className="w-6 h-6 rounded-lg gradient-brand flex items-center justify-center animate-pulse-soft">
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
           </div>
+          <div className="flex gap-1">
+            <div className="w-2 h-2 bg-brand-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
+            <div className="w-2 h-2 bg-brand-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
+            <div className="w-2 h-2 bg-brand-500 rounded-full animate-bounce" />
+          </div>
+          <span className="text-xs text-muted-foreground">Analyzing...</span>
         </div>
       </div>
     </div>
@@ -343,40 +311,20 @@ export function ChatWidget({ messages, isLoading, onSuggestionClick }: ChatWidge
   }, [messages, isLoading]);
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-border/50 glass-strong">
-        <div className="flex items-center gap-3">
-          <div className="w-2 h-2 rounded-full bg-brand-500 animate-pulse-soft" />
-          <div>
-            <h2 className="font-semibold text-foreground text-sm">
-              Financial Assistant
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              {messages.length > 0
-                ? `${messages.length} message${messages.length !== 1 ? "s" : ""} in conversation`
-                : "Ready to analyze your finances"}
-            </p>
-          </div>
-        </div>
+    <ScrollArea className="flex-1">
+      <div className="p-6 space-y-4">
+        {messages.length === 0 ? (
+          <EmptyState onSuggestionClick={onSuggestionClick} />
+        ) : (
+          <>
+            {messages.map((message, index) => (
+              <MessageBubble key={index} message={message} index={index} />
+            ))}
+            {isLoading && <LoadingIndicator />}
+            <div ref={scrollRef} />
+          </>
+        )}
       </div>
-
-      {/* Messages */}
-      <ScrollArea className="flex-1">
-        <div className="p-6">
-          {messages.length === 0 ? (
-            <EmptyState onSuggestionClick={onSuggestionClick} />
-          ) : (
-            <>
-              {messages.map((message, index) => (
-                <MessageBubble key={index} message={message} index={index} />
-              ))}
-              {isLoading && <LoadingIndicator />}
-              <div ref={scrollRef} />
-            </>
-          )}
-        </div>
-      </ScrollArea>
-    </div>
+    </ScrollArea>
   );
 }

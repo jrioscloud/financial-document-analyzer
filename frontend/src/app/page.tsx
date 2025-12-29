@@ -116,14 +116,12 @@ export default function Home() {
     <div className="relative flex min-h-screen bg-background overflow-hidden">
       {/* Ambient Background - BEAUTIFUL stage */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-80 h-80 bg-brand-500/8 rounded-full blur-3xl animate-float" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl animate-float" />
         <div
-          className="absolute top-1/3 -right-20 w-96 h-96 bg-brand-600/6 rounded-full blur-3xl animate-float"
+          className="absolute bottom-0 right-1/4 w-80 h-80 bg-teal-500/10 rounded-full blur-3xl animate-float"
           style={{ animationDelay: "-3s" }}
         />
-        <div className="absolute -bottom-20 left-1/3 w-72 h-72 bg-brand-400/5 rounded-full blur-3xl animate-float"
-          style={{ animationDelay: "-5s" }}
-        />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-brand-600/5 rounded-full blur-3xl" />
       </div>
 
       {/* Sidebar */}
@@ -193,30 +191,48 @@ export default function Home() {
       </aside>
 
       {/* Main Chat Area */}
-      <main className="relative z-10 flex-1 flex flex-col">
-        <ChatWidget messages={messages} isLoading={isLoading} onSuggestionClick={handleSend} />
-
-        {/* Error Banner */}
-        {error && (
-          <div className="px-6 py-3 bg-destructive/10 border-t border-destructive/20 animate-slide-up">
-            <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p className="text-sm text-destructive">{error}</p>
-              <button
-                onClick={() => setError(null)}
-                className="ml-auto text-destructive/60 hover:text-destructive transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+      <main className="relative z-10 flex-1 flex flex-col p-6">
+        {/* Gradient Border Container */}
+        <div className="flex-1 flex flex-col gradient-border rounded-2xl glow">
+          <div className="flex-1 flex flex-col bg-background rounded-2xl overflow-hidden">
+            {/* Window Chrome */}
+            <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500/80 hover:bg-red-500 transition-colors cursor-pointer" />
+                <div className="w-3 h-3 rounded-full bg-yellow-500/80 hover:bg-yellow-500 transition-colors cursor-pointer" />
+                <div className="w-3 h-3 rounded-full bg-green-500/80 hover:bg-green-500 transition-colors cursor-pointer" />
+              </div>
+              <span className="text-sm text-muted-foreground">financial-analyzer.app</span>
+              <div className="w-16" />
             </div>
-          </div>
-        )}
 
-        <ChatInput onSend={handleSend} disabled={isLoading} />
+            {/* Chat Content */}
+            <ChatWidget messages={messages} isLoading={isLoading} onSuggestionClick={handleSend} />
+
+            {/* Error Banner */}
+            {error && (
+              <div className="px-6 py-3 bg-destructive/10 border-t border-destructive/20 animate-slide-up">
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-sm text-destructive">{error}</p>
+                  <button
+                    onClick={() => setError(null)}
+                    className="ml-auto text-destructive/60 hover:text-destructive transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Chat Input */}
+            <ChatInput onSend={handleSend} disabled={isLoading} />
+          </div>
+        </div>
       </main>
     </div>
   );

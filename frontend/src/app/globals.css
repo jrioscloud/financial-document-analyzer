@@ -292,6 +292,25 @@
 }
 
 /* ============================================
+   AESTHETIC FRAMEWORK: Chat Bubbles
+   PEAK stage - Storytelling through UI
+   ============================================ */
+
+.chat-bubble-user {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+.chat-bubble-ai {
+  background: oklch(1 0 0 / 0.05);
+  border: 1px solid oklch(1 0 0 / 0.1);
+}
+
+.dark .chat-bubble-ai {
+  background: oklch(1 0 0 / 0.05);
+  border: 1px solid oklch(1 0 0 / 0.1);
+}
+
+/* ============================================
    AESTHETIC FRAMEWORK: Interactive States
    SATISFYING stage - Hover & focus feedback
    ============================================ */
