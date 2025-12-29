@@ -443,7 +443,7 @@ curl -X POST http://localhost:8000/api/chat \
 
 | Phase | Status | Started | Completed |
 |-------|--------|---------|-----------|
-| 1. Environment Setup | ⬜ Not Started | | |
+| 1. Environment Setup | ✅ Complete | 2025-12-29 | 2025-12-29 |
 | 2. Database & Data | ⬜ Not Started | | |
 | 3. LangChain Agent | ⬜ Not Started | | |
 | 4. FastAPI Backend | ⬜ Not Started | | |
@@ -455,6 +455,6 @@ curl -X POST http://localhost:8000/api/chat \
 
 ---
 
-**Next Step:** Answer Decision Points (D1-D4), then start Phase 1.
+**Next Step:** Start Phase 2 - Create sample data and test database setup.
 
-**To delegate to Claude Code:** "Start Phase 1" or "Do task 1.1"
+**To continue:** "Start Phase 2" or run locally with `docker compose up -d`
