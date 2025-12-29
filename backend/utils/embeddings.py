@@ -77,30 +77,43 @@ def generate_embeddings_batch(
 
 
 def embed_transactions(
-    transactions: List[dict],
+    transactions,
     text_field: str = "description"
 ) -> List[dict]:
     """
     Add embeddings to transaction records.
 
     Args:
-        transactions: List of transaction dicts
+        transactions: List of transaction dicts OR ParsedTransaction objects
         text_field: Field to embed (default: 'description')
 
     Returns:
-        Transactions with 'embedding' field added
+        List of transaction dicts with 'embedding' field added
     """
+    from dataclasses import asdict, is_dataclass
+
+    # Convert to dicts if needed (handles ParsedTransaction dataclass)
+    txn_dicts = []
+    for txn in transactions:
+        if is_dataclass(txn):
+            txn_dict = asdict(txn)
+        elif hasattr(txn, '__dict__'):
+            txn_dict = dict(txn.__dict__)
+        else:
+            txn_dict = dict(txn)
+        txn_dicts.append(txn_dict)
+
     # Extract texts to embed
-    texts = [txn.get(text_field, "") for txn in transactions]
+    texts = [txn.get(text_field, "") for txn in txn_dicts]
 
     # Generate embeddings in batch
     embeddings = generate_embeddings_batch(texts)
 
     # Add embeddings to transactions
-    for txn, embedding in zip(transactions, embeddings):
+    for txn, embedding in zip(txn_dicts, embeddings):
         txn["embedding"] = embedding
 
-    return transactions
+    return txn_dicts
 
 
 def format_embedding_for_pgvector(embedding: List[float]) -> str:

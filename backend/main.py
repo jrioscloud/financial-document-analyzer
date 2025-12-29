@@ -9,10 +9,22 @@ from contextlib import asynccontextmanager
 import os
 
 from models import ChatRequest, ChatResponse, UploadResponse, HealthResponse
+from agent.agent import create_agent, run_agent
+from agent.memory import get_or_create_session
+from utils.csv_parser import parse_csv
+from utils.embeddings import embed_transactions
+from db.init import init_db, store_transactions
 
-# TODO: Import agent and database modules
-# from agent.agent import create_agent
-# from db.init import init_db
+# Global agent instance
+_agent = None
+
+
+def get_agent():
+    """Get or create the global agent instance."""
+    global _agent
+    if _agent is None:
+        _agent = create_agent()
+    return _agent
 
 
 @asynccontextmanager
@@ -20,7 +32,8 @@ async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
     # Startup: Initialize database connection, load agent
     print("Starting Financial Document Analyzer API...")
-    # TODO: init_db()
+    init_db()
+    get_agent()  # Pre-initialize agent
     yield
     # Shutdown: Clean up resources
     print("Shutting down...")
@@ -68,18 +81,30 @@ async def chat(request: ChatRequest):
     - categorize_transaction: Suggest category for a description
     - generate_report: Create spending summary report
     """
-    # TODO: Implement agent logic
-    # 1. Get or create session
-    # 2. Load conversation history
-    # 3. Run agent with message
-    # 4. Save response to history
-    # 5. Return response + tools_used
+    try:
+        # 1. Get or create session
+        session = get_or_create_session(request.session_id)
 
-    return ChatResponse(
-        answer="Agent not yet implemented. This is a placeholder response.",
-        session_id=request.session_id or "new-session-id",
-        tools_used=[]
-    )
+        # 2. Add user message to history
+        session.add_message("user", request.message)
+
+        # 3. Get conversation history for context
+        history = session.get_messages_for_agent()
+
+        # 4. Run agent with message and history
+        agent = get_agent()
+        response, tools_used = run_agent(agent, request.message, history[:-1])  # Exclude current message from history
+
+        # 5. Save assistant response to history
+        session.add_message("assistant", response, tools_used)
+
+        return ChatResponse(
+            answer=response,
+            session_id=session.session_id,
+            tools_used=tools_used
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing chat: {str(e)}")
 
 
 @app.post("/api/upload", response_model=UploadResponse)
@@ -100,24 +125,52 @@ async def upload_file(file: UploadFile = File(...)):
             detail="Only CSV files are supported. PDF support coming soon."
         )
 
-    # TODO: Implement file processing
-    # 1. Read CSV content
-    # 2. Parse transactions
-    # 3. Generate embeddings
-    # 4. Store in database
+    try:
+        # 1. Read CSV content
+        content = await file.read()
+        content_str = content.decode('utf-8')
 
-    return UploadResponse(
-        transactions_count=0,
-        status="Upload not yet implemented",
-        filename=file.filename
-    )
+        # 2. Parse transactions (auto-detects source)
+        transactions, errors = parse_csv(content_str, filename=file.filename)
+
+        if not transactions:
+            error_msg = errors[0] if errors else "No transactions found in file"
+            raise HTTPException(status_code=400, detail=error_msg)
+
+        # 3. Generate embeddings for descriptions
+        transactions_with_embeddings = embed_transactions(transactions)
+
+        # 4. Store in database
+        stored_count = store_transactions(transactions_with_embeddings)
+
+        status_msg = f"Successfully imported {stored_count} transactions"
+        if errors:
+            status_msg += f" ({len(errors)} rows skipped)"
+
+        return UploadResponse(
+            transactions_count=stored_count,
+            status=status_msg,
+            filename=file.filename
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}")
 
 
 @app.get("/api/history/{session_id}")
 async def get_history(session_id: str):
     """Get chat history for a session."""
-    # TODO: Implement history retrieval
-    return {"messages": [], "session_id": session_id}
+    try:
+        session = get_or_create_session(session_id)
+        messages = session.get_history()
+        return {
+            "messages": messages,
+            "session_id": session_id
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting history: {str(e)}")
 
 
 if __name__ == "__main__":

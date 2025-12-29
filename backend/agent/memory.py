@@ -3,12 +3,20 @@ Financial Document Analyzer - Session Memory
 Manage conversation history with PostgreSQL persistence
 """
 
+import os
 from typing import List, Dict, Optional
 from uuid import uuid4
 from datetime import datetime
 
-# TODO: Import database connection
-# from db.connection import get_db_connection
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
+
+def get_db_connection():
+    """Get database connection."""
+    return psycopg2.connect(
+        os.getenv("DATABASE_URL", "postgresql://analyzer:analyzer_dev@localhost:5433/financial_analyzer")
+    )
 
 
 class SessionMemory:
@@ -35,19 +43,62 @@ class SessionMemory:
             self.session_id = str(uuid4())
             self._create_session()
 
-        self.messages: List[Dict] = []
-
     def _create_session(self):
         """Create a new session in the database."""
-        # TODO: Insert into chat_sessions table
-        # INSERT INTO chat_sessions (id) VALUES (self.session_id)
-        pass
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "INSERT INTO chat_sessions (id) VALUES (%s) ON CONFLICT DO NOTHING",
+                        [self.session_id]
+                    )
+                    conn.commit()
+            self.messages: List[Dict] = []
+        except Exception as e:
+            print(f"Warning: Could not create session in database: {e}")
+            self.messages = []
 
     def _load_session(self):
-        """Load existing session from database."""
-        # TODO: Verify session exists
-        # SELECT * FROM chat_sessions WHERE id = self.session_id
-        pass
+        """Load existing session and messages from database."""
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                    # Check if session exists, create if not
+                    cur.execute(
+                        "SELECT id FROM chat_sessions WHERE id = %s",
+                        [self.session_id]
+                    )
+                    if not cur.fetchone():
+                        cur.execute(
+                            "INSERT INTO chat_sessions (id) VALUES (%s)",
+                            [self.session_id]
+                        )
+                        conn.commit()
+
+                    # Load messages
+                    cur.execute(
+                        """
+                        SELECT role, content, tools_used, created_at
+                        FROM chat_messages
+                        WHERE session_id = %s
+                        ORDER BY created_at ASC
+                        """,
+                        [self.session_id]
+                    )
+                    rows = cur.fetchall()
+
+            self.messages = [
+                {
+                    "role": row["role"],
+                    "content": row["content"],
+                    "tools_used": row["tools_used"] or [],
+                    "created_at": row["created_at"].isoformat() if row["created_at"] else None
+                }
+                for row in rows
+            ]
+        except Exception as e:
+            print(f"Warning: Could not load session from database: {e}")
+            self.messages = []
 
     def add_message(self, role: str, content: str, tools_used: List[str] = None):
         """
@@ -70,10 +121,24 @@ class SessionMemory:
 
     def _save_message(self, message: Dict):
         """Save message to database."""
-        # TODO: Insert into chat_messages table
-        # INSERT INTO chat_messages (session_id, role, content, tools_used)
-        # VALUES (self.session_id, message['role'], message['content'], message['tools_used'])
-        pass
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """
+                        INSERT INTO chat_messages (session_id, role, content, tools_used)
+                        VALUES (%s, %s, %s, %s)
+                        """,
+                        [
+                            self.session_id,
+                            message["role"],
+                            message["content"],
+                            message["tools_used"] if message["tools_used"] else None
+                        ]
+                    )
+                    conn.commit()
+        except Exception as e:
+            print(f"Warning: Could not save message to database: {e}")
 
     def get_history(self, limit: int = 20) -> List[Dict]:
         """
@@ -85,11 +150,7 @@ class SessionMemory:
         Returns:
             List of messages in chronological order
         """
-        # TODO: Fetch from database
-        # SELECT * FROM chat_messages
-        # WHERE session_id = self.session_id
-        # ORDER BY created_at DESC LIMIT limit
-
+        # Return from in-memory cache (already loaded from DB)
         return self.messages[-limit:]
 
     def get_messages_for_agent(self) -> List[Dict]:
@@ -106,8 +167,16 @@ class SessionMemory:
 
     def clear(self):
         """Clear all messages in this session."""
-        # TODO: Delete from database
-        # DELETE FROM chat_messages WHERE session_id = self.session_id
+        try:
+            with get_db_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "DELETE FROM chat_messages WHERE session_id = %s",
+                        [self.session_id]
+                    )
+                    conn.commit()
+        except Exception as e:
+            print(f"Warning: Could not clear messages from database: {e}")
         self.messages = []
 
 

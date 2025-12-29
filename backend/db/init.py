@@ -93,6 +93,62 @@ def check_connection() -> bool:
         return False
 
 
+def store_transactions(transactions: list) -> int:
+    """
+    Store transactions with embeddings in the database.
+
+    Args:
+        transactions: List of transaction dicts with embeddings
+
+    Returns:
+        Number of transactions stored
+    """
+    import json
+
+    stored = 0
+    with get_cursor(dict_cursor=False) as cur:
+        for txn in transactions:
+            try:
+                # Format embedding for pgvector
+                embedding = txn.get("embedding")
+                embedding_str = None
+                if embedding:
+                    embedding_str = "[" + ",".join(str(x) for x in embedding) + "]"
+
+                # Handle original_data - ensure it's a string
+                original_data = txn.get("original_data")
+                if isinstance(original_data, dict):
+                    original_data = json.dumps(original_data)
+
+                cur.execute(
+                    """
+                    INSERT INTO transactions
+                        (date, description, amount, amount_original, currency,
+                         category, type, source_bank, source_file, original_data, embedding)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s::vector)
+                    """,
+                    [
+                        txn.get("date"),
+                        txn.get("description"),
+                        txn.get("amount"),
+                        txn.get("amount_original"),
+                        txn.get("currency", "USD"),
+                        txn.get("category"),
+                        txn.get("type"),
+                        txn.get("source_bank"),
+                        txn.get("source_file"),
+                        original_data,
+                        embedding_str
+                    ]
+                )
+                stored += 1
+            except Exception as e:
+                print(f"Error storing transaction: {e}")
+                continue
+
+    return stored
+
+
 if __name__ == "__main__":
     # Run schema initialization when executed directly
     if check_connection():
