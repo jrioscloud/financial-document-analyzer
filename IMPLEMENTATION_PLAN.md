@@ -305,68 +305,59 @@ def generate_report(date_from: str, date_to: str) -> str:
 ---
 
 ## Phase 7: Deployment
-**Executor:** Manual (Terraform) or Claude Code | **Time:** 2 hours
+**Executor:** Manual + Claude Code | **Time:** 2 hours
+**Chosen:** Vercel + Supabase ($0/month)
 
-### Option A: Vercel + Supabase (Recommended - FREE)
-
-#### 7A.1 Supabase Setup
-- [ ] Create Supabase project
-- [ ] Enable pgvector extension
+### 7.1 Supabase Setup
+- [ ] Create Supabase project at https://supabase.com
+- [ ] Enable pgvector extension (Database → Extensions → vector)
 - [ ] Run schema.sql in SQL Editor
-- [ ] Get connection string
-- [ ] Upload sample data
+- [ ] Get connection string (Settings → Database → Connection string)
+- [ ] Upload sample data via SQL or API
 
-#### 7A.2 Backend Deployment (Vercel Serverless)
+### 7.2 Backend Deployment (Vercel Serverless)
 - [ ] Convert FastAPI to Vercel serverless functions
 - [ ] Create `api/` folder in frontend project
 - [ ] Deploy to Vercel
-- [ ] Set environment variables
+- [ ] Set environment variables:
+  - `DATABASE_URL`
+  - `OPENAI_API_KEY`
 
-#### 7A.3 Frontend Deployment
-- [ ] Push to GitHub
+### 7.3 Frontend Deployment
+- [ ] Push to GitHub (public repo)
 - [ ] Connect to Vercel
 - [ ] Auto-deploy on push
+- [ ] Verify live demo works
 
-### Option B: AWS (If you want Terraform practice)
-
-#### 7B.1 Infrastructure (Terraform)
-- [ ] Create `deploy/terraform/main.tf`:
-  - VPC + Subnets (or use default)
-  - RDS PostgreSQL (db.t3.micro - free tier eligible)
-  - Lambda function (Python 3.12)
-  - API Gateway
-  - S3 bucket for uploads
-  - IAM roles
+### 7.4 Terraform Reference (NOT DEPLOYED)
+Keep `deploy/terraform/` folder with working IaC code for portfolio reference:
+- [ ] Create `deploy/terraform/main.tf` (VPC, RDS, Lambda, API Gateway, S3)
 - [ ] Create `deploy/terraform/variables.tf`
 - [ ] Create `deploy/terraform/outputs.tf`
-- [ ] Run `terraform plan` and review
+- [ ] Validate with `terraform validate` (no `apply`)
 
-#### 7B.2 Lambda Deployment
-- [ ] Package backend as Lambda layer
-- [ ] Create `deploy/lambda/handler.py` (Mangum adapter)
-- [ ] Deploy via Terraform
-- [ ] Test API Gateway endpoints
-
-#### 7B.3 Frontend to Vercel (still free)
-- [ ] Update API URL to AWS API Gateway
-- [ ] Deploy frontend to Vercel
+*Purpose: Shows AWS/IaC skills in portfolio without incurring costs.*
 
 ---
 
 ## Phase 8: Ingestion Pipeline (Optional Enhancement)
-**Executor:** Claude Code + Terraform | **Time:** 1 hour
+**Executor:** Claude Code | **Time:** 1 hour
 
 ### 8.1 Local Ingestion Script
 - [ ] Create `scripts/ingest.py`:
   - Watch folder for new CSVs
-  - Auto-process on drop
-- [ ] Test locally
+  - Auto-process and embed on drop
+  - Connect to Supabase directly
+- [ ] Test locally with sample CSV
 
-### 8.2 AWS Ingestion (If using Option B)
-- [ ] S3 bucket notification trigger
+### 8.2 Terraform Reference (NOT DEPLOYED)
+Add to `deploy/terraform/ingestion.tf` for portfolio:
+- [ ] S3 bucket with event notification
 - [ ] Lambda function for processing
-- [ ] Deploy via Terraform
-- [ ] Test: Drop CSV in S3 → appears in database
+- [ ] IAM roles and policies
+- [ ] Validate with `terraform validate`
+
+*This shows the S3 → Lambda → pgvector pattern without deploying it.*
 
 ---
 
@@ -435,24 +426,16 @@ curl -X POST http://localhost:8000/api/chat \
 
 ---
 
-## Decision Points (Need Your Input)
+## Decisions (LOCKED)
 
-### D1: LLM Model Choice
-- [ ] **gpt-4o-mini** ($0.15/1M input) - Recommended for cost
-- [ ] **gpt-4o** ($2.50/1M input) - Better quality
-- [ ] **Claude 3 Haiku** ($0.25/1M input) - If you prefer Anthropic
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| **D1: LLM Model** | ✅ gpt-4o-mini | $0.15/1M input - cost effective |
+| **D2: Deployment** | ✅ Vercel + Supabase | $0/month, Terraform kept for reference |
+| **D3: PDF Support** | ✅ CSV only | Faster MVP, PDF can be added later |
+| **D4: Repo Visibility** | ✅ Public | Portfolio visibility, data will be anonymized |
 
-### D2: Deployment Target
-- [ ] **Option A: Vercel + Supabase** - $0/month, easiest
-- [ ] **Option B: AWS Full** - $5-15/month, shows AWS skills
-
-### D3: PDF Support
-- [ ] **MVP: CSV only** - Faster to build
-- [ ] **Full: CSV + PDF** - More impressive, needs pypdf/pdfplumber
-
-### D4: Public or Private Repo
-- [ ] **Public** - Portfolio visibility, sanitized data required
-- [ ] **Private** - Can use real data structure
+**Note:** Terraform folder (`deploy/terraform/`) kept for reference but not deployed. Shows IaC skills without incurring AWS costs.
 
 ---
 

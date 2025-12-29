@@ -209,15 +209,19 @@ financial-document-analyzer/
 
 ---
 
-## Deployment Options
+## Deployment & Decisions
 
-| Option | Cost | Complexity |
-|--------|------|------------|
-| **Vercel + Supabase** | $0 | Low |
-| **Vercel + Railway** | $5-10/mo | Low |
-| **AWS Lambda + RDS** | $15-25/mo | Medium |
+| Decision | Choice |
+|----------|--------|
+| **LLM Model** | gpt-4o-mini ($0.15/1M input) |
+| **Deployment** | Vercel + Supabase ($0/month) |
+| **File Support** | CSV only (MVP) |
+| **Repo Visibility** | Public (anonymized data) |
 
-**Chosen:** Vercel (frontend) + Supabase (DB) for free tier
+**Deployment Stack:**
+- **Frontend:** Vercel (free tier, auto-deploy from GitHub)
+- **Database:** Supabase (free tier, pgvector included)
+- **Terraform:** Reference code in `deploy/terraform/` (not deployed, shows IaC skills)
 
 ---
 
