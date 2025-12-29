@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useCallback, DragEvent, ChangeEvent } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { uploadFile, UploadResponse } from "@/lib/api";
 
 interface FileUploadProps {
@@ -13,13 +12,16 @@ interface FileUploadProps {
 export function FileUpload({ onUploadComplete, onError }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const handleFile = useCallback(
     async (file: File) => {
       if (!file.name.endsWith(".csv")) {
         const errorMsg = "Only CSV files are supported";
-        setUploadStatus(errorMsg);
+        setUploadStatus({ type: "error", message: errorMsg });
         onError?.(errorMsg);
         return;
       }
@@ -29,11 +31,11 @@ export function FileUpload({ onUploadComplete, onError }: FileUploadProps) {
 
       try {
         const result = await uploadFile(file);
-        setUploadStatus(result.status);
+        setUploadStatus({ type: "success", message: result.status });
         onUploadComplete?.(result);
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : "Upload failed";
-        setUploadStatus(errorMsg);
+        setUploadStatus({ type: "error", message: errorMsg });
         onError?.(errorMsg);
       } finally {
         setIsUploading(false);
@@ -70,56 +72,131 @@ export function FileUpload({ onUploadComplete, onError }: FileUploadProps) {
   };
 
   return (
-    <Card className="p-4">
+    <div className="space-y-3">
+      {/* Upload Zone */}
       <div
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`
-          border-2 border-dashed rounded-lg p-6 text-center transition-colors
-          ${isDragging
-            ? "border-zinc-400 bg-zinc-50 dark:bg-zinc-800"
-            : "border-zinc-200 dark:border-zinc-700"
-          }
-          ${isUploading ? "opacity-50 pointer-events-none" : ""}
-        `}
+        className={cn(
+          "relative rounded-xl border-2 border-dashed p-5 text-center",
+          "transition-all duration-200 cursor-pointer",
+          isDragging
+            ? "border-brand-500 bg-brand-500/10 scale-[1.02]"
+            : "border-border/50 hover:border-brand-500/30 hover:bg-secondary/30",
+          isUploading && "opacity-60 pointer-events-none"
+        )}
       >
-        <div className="text-3xl mb-2">📄</div>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-3">
+        {/* Icon */}
+        <div
+          className={cn(
+            "w-12 h-12 mx-auto mb-3 rounded-xl flex items-center justify-center",
+            "transition-all duration-200",
+            isDragging
+              ? "gradient-brand text-white scale-110 glow-sm"
+              : "bg-secondary/50 text-muted-foreground"
+          )}
+        >
+          {isUploading ? (
+            <svg
+              className="w-6 h-6 animate-spin"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+          ) : (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+              />
+            </svg>
+          )}
+        </div>
+
+        {/* Text */}
+        <p className="text-sm text-foreground font-medium mb-1">
           {isUploading
             ? "Uploading..."
-            : "Drag & drop a CSV file here, or click to select"}
+            : isDragging
+            ? "Drop to upload"
+            : "Drop your CSV here"}
         </p>
+        <p className="text-xs text-muted-foreground mb-3">
+          or click to browse
+        </p>
+
+        {/* Hidden Input */}
         <input
           type="file"
           accept=".csv"
           onChange={handleInputChange}
           disabled={isUploading}
-          className="hidden"
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
           id="file-upload"
         />
-        <Button asChild variant="outline" size="sm" disabled={isUploading}>
-          <label htmlFor="file-upload" className="cursor-pointer">
-            Select File
-          </label>
-        </Button>
-        <p className="text-xs text-zinc-400 mt-2">
-          Supports: Upwork, Nu Bank, BBVA transactions
-        </p>
+
+        {/* Supported Formats */}
+        <div className="flex flex-wrap items-center justify-center gap-1.5">
+          {["Upwork", "Nu Bank", "BBVA"].map((format) => (
+            <span
+              key={format}
+              className="px-2 py-0.5 text-[10px] font-medium rounded-full
+                       bg-secondary/50 text-muted-foreground"
+            >
+              {format}
+            </span>
+          ))}
+        </div>
       </div>
 
+      {/* Status Message */}
       {uploadStatus && (
         <div
-          className={`mt-3 p-2 rounded text-sm ${
-            uploadStatus.toLowerCase().includes("error") ||
-            uploadStatus.toLowerCase().includes("failed")
-              ? "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400"
-              : "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400"
-          }`}
+          className={cn(
+            "flex items-center gap-2 px-3 py-2.5 rounded-lg animate-slide-up",
+            "text-sm",
+            uploadStatus.type === "error"
+              ? "bg-destructive/10 text-destructive border border-destructive/20"
+              : "bg-brand-500/10 text-brand-400 border border-brand-500/20"
+          )}
         >
-          {uploadStatus}
+          {uploadStatus.type === "error" ? (
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          ) : (
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          )}
+          <span className="text-xs">{uploadStatus.message}</span>
+          <button
+            onClick={() => setUploadStatus(null)}
+            className="ml-auto text-current opacity-60 hover:opacity-100 transition-opacity"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
       )}
-    </Card>
+    </div>
   );
 }
