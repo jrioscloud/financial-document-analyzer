@@ -1,7 +1,4 @@
 @import "tailwindcss";
-@import "tw-animate-css";
-
-@custom-variant dark (&:is(.dark *));
 
 /* ============================================
    AESTHETIC FRAMEWORK: Color System
@@ -396,19 +393,15 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
 
   body {
     @apply bg-background text-foreground;
   }
+}
 
-  /* Force dark mode by default for this app */
-  html {
-    color-scheme: dark;
-  }
-
-  body {
-    @apply dark;
-  }
+/* Force dark mode */
+html {
+  color-scheme: dark;
 }

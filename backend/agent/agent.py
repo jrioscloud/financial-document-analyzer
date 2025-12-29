@@ -5,14 +5,22 @@ Main agent setup with tool binding and system prompt
 
 import os
 from typing import Optional
+from datetime import datetime
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langgraph.prebuilt import create_react_agent
 
 from .tools import ALL_TOOLS
 
-# System prompt for the financial analyst agent
-SYSTEM_PROMPT = """You are a helpful financial analyst assistant. You help users understand their spending patterns and financial data.
+
+def get_system_prompt() -> str:
+    """Generate system prompt with current date."""
+    today = datetime.now().strftime("%Y-%m-%d")
+    current_month = datetime.now().strftime("%B %Y")
+
+    return f"""You are a helpful financial analyst assistant. You help users understand their spending patterns and financial data.
+
+IMPORTANT: Today's date is {today}. When users refer to "this month", "last month", etc., calculate dates relative to {current_month}.
 
 You have access to the following tools:
 - search_transactions: Search for specific transactions by description
@@ -27,6 +35,7 @@ When answering questions:
 3. If you need clarification, ask the user
 4. Format currency as USD with 2 decimal places
 5. When showing multiple transactions, use a clean list format
+6. Use YYYY-MM-DD format for all date parameters
 
 Examples of queries you can help with:
 - "How much did I spend on food last month?"
@@ -67,7 +76,7 @@ def create_agent(
     agent = create_react_agent(
         model=llm,
         tools=ALL_TOOLS,
-        prompt=SYSTEM_PROMPT
+        prompt=get_system_prompt()
     )
 
     return agent

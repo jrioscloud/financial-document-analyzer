@@ -459,6 +459,11 @@ curl -X POST http://localhost:8000/api/chat \
 
 ---
 
-**Next Step:** Phase 6 - Integration Testing (run locally).
+**Next Step:** Phase 6 - Integration Testing (in progress).
 
-**To continue:** Run `docker compose up -d` then `cd backend && uvicorn main:app --reload` and `cd frontend && npm run dev`
+**Current Status (2025-12-29):**
+- Database: Running on port 5434 (PostgreSQL + pgvector)
+- Backend: Running on port 8000 (FastAPI + LangChain)
+- Frontend: Running on port 3001 (Next.js 16 + Tailwind v4)
+
+**To continue:** Test full flow - upload CSV, ask questions, verify tool usage

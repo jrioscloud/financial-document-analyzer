@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "@/lib/api";
@@ -8,6 +9,7 @@ import type { ChatMessage } from "@/lib/api";
 interface ChatWidgetProps {
   messages: ChatMessage[];
   isLoading?: boolean;
+  onSuggestionClick?: (text: string) => void;
 }
 
 // Tool icon mapping for visual feedback
@@ -57,8 +59,136 @@ function ToolBadge({ tool }: { tool: string }) {
   );
 }
 
+// Markdown content with styled components
+function MarkdownContent({ content }: { content: string }) {
+  return (
+    <ReactMarkdown
+      components={{
+        // Headings
+        h1: ({ children }) => (
+          <h1 className="text-lg font-bold text-foreground mb-3 pb-2 border-b border-brand-500/20">
+            {children}
+          </h1>
+        ),
+        h2: ({ children }) => (
+          <h2 className="text-base font-semibold text-foreground mb-2 mt-4 first:mt-0">
+            {children}
+          </h2>
+        ),
+        h3: ({ children }) => (
+          <h3 className="text-sm font-semibold text-foreground mb-2 mt-3 first:mt-0 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-500" />
+            {children}
+          </h3>
+        ),
+        h4: ({ children }) => (
+          <h4 className="text-sm font-medium text-brand-400 mb-1.5 mt-2 first:mt-0">
+            {children}
+          </h4>
+        ),
+        // Paragraphs
+        p: ({ children }) => (
+          <p className="text-sm leading-relaxed mb-2 last:mb-0 text-foreground/90">
+            {children}
+          </p>
+        ),
+        // Strong/Bold
+        strong: ({ children }) => (
+          <strong className="font-semibold text-brand-400">{children}</strong>
+        ),
+        // Emphasis/Italic
+        em: ({ children }) => (
+          <em className="italic text-foreground/80">{children}</em>
+        ),
+        // Lists
+        ul: ({ children }) => (
+          <ul className="space-y-1.5 mb-3 last:mb-0">{children}</ul>
+        ),
+        ol: ({ children }) => (
+          <ol className="space-y-1.5 mb-3 last:mb-0 list-decimal list-inside">{children}</ol>
+        ),
+        li: ({ children }) => (
+          <li className="text-sm leading-relaxed flex items-start gap-2">
+            <span className="mt-2 w-1 h-1 rounded-full bg-brand-500/60 flex-shrink-0" />
+            <span className="flex-1">{children}</span>
+          </li>
+        ),
+        // Code
+        code: ({ children, className }) => {
+          const isBlock = className?.includes("language-");
+          if (isBlock) {
+            return (
+              <code className="block bg-background/50 rounded-lg p-3 text-xs font-mono overflow-x-auto border border-border/50">
+                {children}
+              </code>
+            );
+          }
+          return (
+            <code className="px-1.5 py-0.5 rounded bg-brand-500/10 text-brand-400 text-xs font-mono">
+              {children}
+            </code>
+          );
+        },
+        pre: ({ children }) => (
+          <pre className="mb-3 last:mb-0">{children}</pre>
+        ),
+        // Links
+        a: ({ href, children }) => (
+          <a
+            href={href}
+            className="text-brand-400 hover:text-brand-300 underline underline-offset-2 transition-colors"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {children}
+          </a>
+        ),
+        // Blockquote
+        blockquote: ({ children }) => (
+          <blockquote className="border-l-2 border-brand-500/40 pl-3 my-2 italic text-foreground/70">
+            {children}
+          </blockquote>
+        ),
+        // Horizontal rule
+        hr: () => (
+          <hr className="my-3 border-t border-border/50" />
+        ),
+        // Tables
+        table: ({ children }) => (
+          <div className="overflow-x-auto my-3 rounded-lg border border-border/50">
+            <table className="w-full text-sm">{children}</table>
+          </div>
+        ),
+        thead: ({ children }) => (
+          <thead className="bg-brand-500/10 border-b border-border/50">{children}</thead>
+        ),
+        tbody: ({ children }) => (
+          <tbody className="divide-y divide-border/30">{children}</tbody>
+        ),
+        tr: ({ children }) => (
+          <tr className="hover:bg-brand-500/5 transition-colors">{children}</tr>
+        ),
+        th: ({ children }) => (
+          <th className="px-3 py-2 text-left font-semibold text-brand-400">{children}</th>
+        ),
+        td: ({ children }) => (
+          <td className="px-3 py-2 text-foreground/90">{children}</td>
+        ),
+      }}
+    >
+      {content}
+    </ReactMarkdown>
+  );
+}
+
 function MessageBubble({ message, index }: { message: ChatMessage; index: number }) {
   const isUser = message.role === "user";
+  const hasMarkdown = !isUser && (
+    message.content.includes("###") ||
+    message.content.includes("**") ||
+    message.content.includes("- ") ||
+    message.content.includes("| ")
+  );
 
   return (
     <div
@@ -93,15 +223,25 @@ function MessageBubble({ message, index }: { message: ChatMessage; index: number
         <div className="flex flex-col gap-2">
           <div
             className={cn(
-              "rounded-2xl px-4 py-3 transition-all duration-200",
+              "rounded-2xl transition-all duration-200",
               isUser
-                ? "bg-foreground text-background rounded-tr-md"
-                : "glass-strong rounded-tl-md"
+                ? "bg-foreground text-background rounded-tr-md px-4 py-3"
+                : "glass-strong rounded-tl-md",
+              // Wider padding for markdown reports
+              !isUser && hasMarkdown ? "px-5 py-4" : !isUser && "px-4 py-3"
             )}
           >
-            <div className="whitespace-pre-wrap text-sm leading-relaxed">
-              {message.content}
-            </div>
+            {isUser ? (
+              <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                {message.content}
+              </div>
+            ) : hasMarkdown ? (
+              <MarkdownContent content={message.content} />
+            ) : (
+              <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                {message.content}
+              </div>
+            )}
           </div>
 
           {/* Tool Badges */}
@@ -145,7 +285,7 @@ function LoadingIndicator() {
   );
 }
 
-function EmptyState() {
+function EmptyState({ onSuggestionClick }: { onSuggestionClick?: (text: string) => void }) {
   const suggestions = [
     { icon: "💰", text: "How much did I spend on food this month?" },
     { icon: "📊", text: "What are my top expense categories?" },
@@ -177,6 +317,7 @@ function EmptyState() {
         {suggestions.map((suggestion, i) => (
           <button
             key={i}
+            onClick={() => onSuggestionClick?.(suggestion.text)}
             className="w-full text-left px-4 py-3 rounded-xl glass
                       text-sm text-muted-foreground hover:text-foreground
                       border border-transparent hover:border-brand-500/20
@@ -191,7 +332,7 @@ function EmptyState() {
   );
 }
 
-export function ChatWidget({ messages, isLoading }: ChatWidgetProps) {
+export function ChatWidget({ messages, isLoading, onSuggestionClick }: ChatWidgetProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
@@ -224,7 +365,7 @@ export function ChatWidget({ messages, isLoading }: ChatWidgetProps) {
       <ScrollArea className="flex-1">
         <div className="p-6">
           {messages.length === 0 ? (
-            <EmptyState />
+            <EmptyState onSuggestionClick={onSuggestionClick} />
           ) : (
             <>
               {messages.map((message, index) => (

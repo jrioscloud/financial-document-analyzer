@@ -194,7 +194,7 @@ export default function Home() {
 
       {/* Main Chat Area */}
       <main className="relative z-10 flex-1 flex flex-col">
-        <ChatWidget messages={messages} isLoading={isLoading} />
+        <ChatWidget messages={messages} isLoading={isLoading} onSuggestionClick={handleSend} />
 
         {/* Error Banner */}
         {error && (
