@@ -1,0 +1,25 @@
+# Financial Document Analyzer - Local Development
+# PostgreSQL with pgvector extension for RAG
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: financial_analyzer_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-analyzer}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-analyzer_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-financial_analyzer}
+    ports:
+      - "5433:5432"  # Use 5433 to avoid conflict with other PostgreSQL instances
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backend/db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-analyzer} -d ${POSTGRES_DB:-financial_analyzer}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:
