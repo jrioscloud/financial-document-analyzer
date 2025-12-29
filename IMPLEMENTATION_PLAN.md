@@ -368,6 +368,122 @@ Add to `deploy/terraform/ingestion.tf` for portfolio:
 
 ---
 
+## Phase 8.5: Landing Page & Routing
+**Executor:** Claude Code | **Time:** 1 hour
+**Status:** ✅ COMPLETE (2025-12-29)
+
+### 8.5.1 Routing Structure
+Convert standalone `index.html` to Next.js App Router with proper routing:
+
+```
+/                   → Landing Page (marketing/portfolio)
+/app                → Chat Application (current functionality)
+```
+
+### 8.5.2 Implementation Steps
+
+**Step 1: Create App Route**
+- [x] Create `frontend/src/app/app/page.tsx`
+- [x] Move current `frontend/src/app/page.tsx` content to `app/app/page.tsx`
+- [x] This creates the `/app` route for the chat interface
+
+**Step 2: Convert Landing Page**
+- [x] Convert `index.html` (root) → `frontend/src/app/page.tsx`
+- [x] Keep existing Tailwind styles (already compatible)
+- [x] Use Next.js `Link` component for navigation
+- [x] Reuse existing CSS variables from `globals.css`
+
+**Step 3: Update CTAs**
+All buttons should link to `/app`:
+- [x] "Get Started" button (nav) → `/app`
+- [x] "Upload Documents" button (hero) → `/app`
+- [x] "Watch Demo" button → `#demo` anchor (stays on landing)
+- [x] "Start Free Analysis" button (CTA section) → `/app`
+
+**Step 4: Shared Components**
+- [x] Extract `BrandIcon` to `components/BrandIcon.tsx` (used in both pages)
+- [x] Keep navigation consistent between pages
+
+### 8.5.3 User Flow
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  LANDING PAGE (/)                                           │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  Nav: Logo | Features | Demo | [Get Started → /app]  │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  Hero Section                                        │   │
+│  │  "Understand Your Finances With AI Precision"        │   │
+│  │  [Upload Documents → /app]  [Watch Demo → #demo]     │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  #demo - Interactive Chat Preview (static mockup)    │   │
+│  │  Shows: User question → AI response with tool badge  │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  #features - 6 Tool Cards Grid                       │   │
+│  │  Search | Analyze | Compare | Categorize | Report    │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  Tech Stack: Next.js • FastAPI • LangChain • etc     │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  Final CTA: [Start Free Analysis → /app]             │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  Footer: Logo | GitHub link                          │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼ User clicks CTA
+┌─────────────────────────────────────────────────────────────┐
+│  APP PAGE (/app)                                            │
+│  ┌──────────────┬──────────────────────────────────────┐   │
+│  │   Sidebar    │      Chat Interface                   │   │
+│  │  ┌────────┐  │  ┌────────────────────────────────┐  │   │
+│  │  │ Logo   │  │  │  Window Chrome (dots)          │  │   │
+│  │  ├────────┤  │  ├────────────────────────────────┤  │   │
+│  │  │New Chat│  │  │  Messages + Tool Badges        │  │   │
+│  │  ├────────┤  │  │                                │  │   │
+│  │  │ Upload │  │  │  - User bubbles (right)        │  │   │
+│  │  │  CSV   │  │  │  - AI bubbles (left)           │  │   │
+│  │  ├────────┤  │  │  - Markdown formatting         │  │   │
+│  │  │        │  │  ├────────────────────────────────┤  │   │
+│  │  │        │  │  │  Chat Input                    │  │   │
+│  │  ├────────┤  │  └────────────────────────────────┘  │   │
+│  │  │ Footer │  │                                      │   │
+│  │  │  Tags  │  │                                      │   │
+│  │  └────────┘  │                                      │   │
+│  └──────────────┴──────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 8.5.4 Files to Create/Modify
+
+| Action | File | Description |
+|--------|------|-------------|
+| CREATE | `frontend/src/app/app/page.tsx` | Chat app (move from page.tsx) |
+| MODIFY | `frontend/src/app/page.tsx` | Landing page (convert from index.html) |
+| CREATE | `frontend/src/components/BrandIcon.tsx` | Shared logo component |
+| DELETE | `/index.html` | No longer needed after conversion |
+
+### 8.5.5 Source Reference
+The landing page HTML is at: `/Volumes/Chocoflan/Projects/financial-document-analyzer/index.html`
+- Already uses Tailwind CSS (CDN version)
+- Already has matching brand colors (brand-500 = #22c55e)
+- Already has glass, glow, animation utilities
+- Static chat mockup demonstrates tool usage
+
+---
+
 ## Phase 9: Portfolio Deliverables
 **Executor:** Manual + Claude Code | **Time:** 2 hours
 
@@ -458,6 +574,7 @@ curl -X POST http://localhost:8000/api/chat \
 | 6. Integration Testing | ✅ Complete | 2025-12-29 | 2025-12-29 |
 | 7. Deployment | ⬜ Not Started | | |
 | 8. Ingestion Pipeline | ⬜ Not Started | | |
+| **8.5 Landing Page & Routing** | ✅ Complete | 2025-12-29 | 2025-12-29 |
 | 9. Portfolio Deliverables | ⬜ Not Started | | |
 
 ---
