@@ -8,7 +8,11 @@
 
 ## Goal
 
-Build a RAG-powered chatbot that analyzes financial documents (CSV/PDF), answers questions about spending, and demonstrates tool calling with LangChain.
+Build a RAG-powered chatbot that consolidates and analyzes financial data from **multiple sources**:
+- **Upwork transactions** (freelance income)
+- **Bank statements** (Nu Bank, BBVA - credit/debit)
+
+Answer questions about spending, income, and patterns across all accounts using LangChain tool calling.
 
 ---
 
@@ -17,6 +21,7 @@ Build a RAG-powered chatbot that analyzes financial documents (CSV/PDF), answers
 | Capability | How It's Demonstrated |
 |------------|----------------------|
 | RAG Pipeline | Document → Embeddings → pgvector → Retrieval |
+| Multi-Source Integration | Upwork + Nu Bank + BBVA → unified schema |
 | Tool Calling | `search_transactions`, `analyze_spending`, `compare_periods` |
 | Session Memory | Conversation history persisted |
 | Production Deploy | AWS Lambda or Vercel (not localhost) |
@@ -42,31 +47,61 @@ Build a RAG-powered chatbot that analyzes financial documents (CSV/PDF), answers
 
 ---
 
-## Demo Data
+## Supported Data Sources
 
-**Source:** `/Volumes/Chocoflan/Documents/FN_Upwork_unlocked/financial_analysis/`
+| Source | Format | Currency | Example Columns |
+|--------|--------|----------|-----------------|
+| **Upwork** | CSV | USD | Date, Type, Contract_Details, Client, Amount_USD |
+| **Nu Bank Credit** | CSV | MXN | Fecha, Categoria, Descripcion, Monto, Tipo |
+| **Nu Bank Debit** | CSV | MXN | Fecha, Tipo, Descripcion, Monto, Cajita |
+| **BBVA Credit** | CSV | MXN | Fecha_Operacion, Fecha_Cargo, Descripcion, Monto |
+| **BBVA Debit** | CSV | MXN | Fecha, Descripcion, Monto, Saldo, Beneficiario |
+
+**Auto-Detection:** Parser detects source from headers + filename automatically.
+
+**Source Location:** `/Volumes/Chocoflan/Documents/FN_Upwork_unlocked/financial_analysis/`
+
+---
+
+## Demo Data
 
 For public demo, data will be **anonymized**:
 - Merchant names: "Starbucks" → "Coffee Shop A"
+- Client names: "Kevin Dorry" → "Client A"
 - Amounts: Rounded
-- Dates: Shifted
+- Dates: Shifted by random offset
 
-**Schema:**
+---
+
+## Database Schema
+
 ```sql
--- Core transaction data
+-- Core transaction data (multi-source)
 transactions (
   id SERIAL PRIMARY KEY,
   date DATE NOT NULL,
   description TEXT NOT NULL,
-  amount DECIMAL(10,2) NOT NULL,
+  amount DECIMAL(12,2) NOT NULL,       -- Normalized: positive=income, negative=expense
+  amount_original DECIMAL(12,2),        -- Original value before normalization
+  currency VARCHAR(3) DEFAULT 'USD',    -- USD or MXN
   category TEXT,
-  type TEXT CHECK (type IN ('income', 'expense')),
-  embedding vector(1536),      -- pgvector for RAG
-  source_file TEXT,            -- track upload source
-  created_at TIMESTAMP DEFAULT NOW()
+  type TEXT CHECK (type IN ('income', 'expense', 'transfer')),
+  source_bank VARCHAR(50),              -- upwork, nu_credit, nu_debit, bbva_credit, bbva_debit
+  source_file TEXT,
+  original_data JSONB,                  -- Full original CSV row (for audit)
+  embedding vector(1536),               -- OpenAI text-embedding-3-small
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
 )
 
--- Session memory (conversation history)
+-- Schema migrations tracking
+schema_migrations (
+  version VARCHAR(14) PRIMARY KEY,
+  name VARCHAR(255),
+  applied_at TIMESTAMP
+)
+
+-- Session memory
 chat_sessions (
   id UUID PRIMARY KEY,
   created_at TIMESTAMP,
@@ -78,7 +113,7 @@ chat_messages (
   session_id UUID REFERENCES chat_sessions(id),
   role TEXT CHECK (role IN ('user', 'assistant', 'system')),
   content TEXT NOT NULL,
-  tools_used TEXT[],           -- track which tools were called
+  tools_used TEXT[],
   created_at TIMESTAMP
 )
 ```
