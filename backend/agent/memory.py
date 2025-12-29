@@ -15,7 +15,7 @@ from psycopg2.extras import RealDictCursor
 def get_db_connection():
     """Get database connection."""
     return psycopg2.connect(
-        os.getenv("DATABASE_URL", "postgresql://analyzer:analyzer_dev@localhost:5433/financial_analyzer")
+        os.getenv("DATABASE_URL", "postgresql://analyzer:analyzer_dev@localhost:5434/financial_analyzer")
     )
 
 

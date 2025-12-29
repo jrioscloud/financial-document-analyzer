@@ -10,7 +10,7 @@ from psycopg2.extras import RealDictCursor
 from contextlib import contextmanager
 
 # Database connection parameters
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://analyzer:analyzer_dev@localhost:5433/financial_analyzer")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://analyzer:analyzer_dev@localhost:5434/financial_analyzer")
 
 
 @contextmanager
