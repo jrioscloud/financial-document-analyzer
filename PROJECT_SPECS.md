@@ -21,6 +21,8 @@ Build a RAG-powered chatbot that analyzes financial documents (CSV/PDF), answers
 | Session Memory | Conversation history persisted |
 | Production Deploy | AWS Lambda or Vercel (not localhost) |
 | Full Stack | Next.js frontend + FastAPI backend |
+| Event-Driven Ingestion | S3 upload → Lambda → Auto-embed into pgvector |
+| Infrastructure as Code | Terraform modules for S3 + Lambda |
 
 ---
 
@@ -139,7 +141,13 @@ financial-document-analyzer/
 │   └── sample_transactions.csv  # Anonymized demo data
 ├── docker-compose.yml        # Local dev
 └── deploy/
-    ├── lambda/              # AWS Lambda config
+    ├── terraform/           # IaC for ingestion pipeline
+    │   ├── main.tf
+    │   ├── ingestion.tf     # S3 + Lambda trigger
+    │   └── variables.tf
+    ├── lambda/              # Lambda function code
+    │   ├── handler.py
+    │   └── requirements.txt
     └── vercel.json          # Vercel config
 ```
 
@@ -184,6 +192,122 @@ financial-document-analyzer/
 - **Planning doc:** `/Volumes/Chocoflan/Documents/FN_Upwork_unlocked/specialized_profiles/full_stack_ai_profile/portfolio_items_plan.md`
 - **Financial data:** `/Volumes/Chocoflan/Documents/FN_Upwork_unlocked/financial_analysis/`
 - **LangChain learning:** `/Volumes/Chocoflan/Documents/FN_Upwork_unlocked/learning/langchain_study_tracker.md`
+
+---
+
+## Automated Ingestion Pipeline
+
+**Use Case:** Drop monthly bank CSV exports into S3 → automatically parsed, embedded, and queryable.
+
+### Architecture
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   S3 Bucket     │────▶│  Lambda         │────▶│   PostgreSQL    │
+│   /uploads/     │     │  process-doc    │     │   + pgvector    │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+        │                       │
+   PUT event              ┌─────┴─────┐
+   (CSV/PDF)              │           │
+                    Parse file   Generate embeddings
+                                 (OpenAI/Bedrock)
+```
+
+### Components
+
+| Component | Details |
+|-----------|---------|
+| **S3 Bucket** | `financial-docs-{env}` with prefixes: `uploads/csv/`, `uploads/pdf/` |
+| **Lambda** | `process-financial-document` - Python 3.12, 1024MB, 5min timeout |
+| **Trigger** | S3 PUT event on `uploads/*` |
+| **Embeddings** | OpenAI `text-embedding-3-small` or AWS Bedrock Titan |
+
+### Lambda Handler (Simplified)
+
+```python
+def handler(event, context):
+    # 1. Get file from S3 event
+    bucket = event['Records'][0]['s3']['bucket']['name']
+    key = event['Records'][0]['s3']['object']['key']
+
+    # 2. Download and parse
+    obj = s3.get_object(Bucket=bucket, Key=key)
+    if key.endswith('.csv'):
+        transactions = parse_csv(obj['Body'])
+    elif key.endswith('.pdf'):
+        transactions = extract_pdf_transactions(obj['Body'])
+
+    # 3. Generate embeddings
+    embeddings = openai.embeddings.create(
+        model="text-embedding-3-small",
+        input=[t.description for t in transactions]
+    )
+
+    # 4. Store in pgvector
+    with get_db_connection() as conn:
+        for txn, emb in zip(transactions, embeddings.data):
+            conn.execute(
+                "INSERT INTO transactions (date, description, amount, category, embedding) "
+                "VALUES (%s, %s, %s, %s, %s)",
+                (txn.date, txn.description, txn.amount, txn.category, emb.embedding)
+            )
+
+    return {"status": "processed", "records": len(transactions)}
+```
+
+### Cost Estimate
+
+| Service | Usage | Cost |
+|---------|-------|------|
+| Lambda | 100 invocations/month | ~$0.01 |
+| S3 | 1GB storage | ~$0.02 |
+| OpenAI embeddings | 50K tokens/month | ~$0.01 |
+| **Total** | | **< $1/month** |
+
+### Terraform (Infrastructure as Code)
+
+```hcl
+# deploy/terraform/ingestion.tf
+
+resource "aws_s3_bucket" "uploads" {
+  bucket = "financial-docs-${var.environment}"
+}
+
+resource "aws_lambda_function" "processor" {
+  function_name = "process-financial-document"
+  runtime       = "python3.12"
+  handler       = "handler.lambda_handler"
+  memory_size   = 1024
+  timeout       = 300
+
+  environment {
+    variables = {
+      DB_CONNECTION_STRING = var.db_connection_string
+      OPENAI_API_KEY       = var.openai_api_key
+    }
+  }
+}
+
+resource "aws_s3_bucket_notification" "trigger" {
+  bucket = aws_s3_bucket.uploads.id
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.processor.arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "uploads/"
+  }
+}
+```
+
+### What This Proves to Clients
+
+| Skill | Evidence |
+|-------|----------|
+| **Event-driven architecture** | S3 triggers Lambda automatically |
+| **Serverless** | No servers to manage, scales to zero |
+| **IaC** | Terraform modules (your moat) |
+| **RAG ingestion** | Document → Embeddings → Vector store |
+| **Cost optimization** | < $1/month for demo workload |
 
 ---
 
