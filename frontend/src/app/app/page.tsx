@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { ChatWidget } from "@/components/ChatWidget";
 import { ChatInput } from "@/components/ChatInput";
 import { FileUpload } from "@/components/FileUpload";
 import { BrandIcon } from "@/components/BrandIcon";
 import { sendMessage, getHistory, type ChatMessage, type UploadResponse } from "@/lib/api";
+import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
 // Session ID storage key
@@ -16,6 +18,22 @@ export default function AppPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const router = useRouter();
+  const supabase = createClient();
+
+  // Get current user on mount
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUserEmail(user?.email ?? null);
+    });
+  }, [supabase.auth]);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  };
 
   // Load session from localStorage on mount
   useEffect(() => {
@@ -160,6 +178,25 @@ export default function AppPage() {
 
         {/* Footer */}
         <div className="p-4 border-t border-border/50">
+          {/* User & Logout */}
+          {userEmail && (
+            <div className="flex items-center justify-between mb-3 pb-3 border-b border-border/30">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-6 h-6 rounded-full bg-brand-500/20 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-3 h-3 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <span className="text-xs text-muted-foreground truncate">{userEmail}</span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+              >
+                Sign out
+              </button>
+            </div>
+          )}
           <div className="flex items-center gap-2 mb-3">
             <div className="w-2 h-2 rounded-full bg-brand-500 animate-pulse-soft" />
             <span className="text-xs text-muted-foreground">Powered by LangChain + pgvector</span>
