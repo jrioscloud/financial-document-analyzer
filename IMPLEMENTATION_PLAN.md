@@ -409,22 +409,43 @@ Keep `deploy/terraform/` folder with working IaC code for portfolio reference:
 
 ## Phase 8: Ingestion Pipeline (Optional Enhancement)
 **Executor:** Claude Code | **Time:** 1 hour
+**Status:** ✅ COMPLETE (2025-12-30)
 
 ### 8.1 Local Ingestion Script
-- [ ] Create `scripts/ingest.py`:
-  - Watch folder for new CSVs
+- [x] Create `scripts/ingest.py`:
+  - Watch folder for new CSVs (`--watch /path/to/folder`)
+  - Process single file (`--file /path/to/file.csv`)
+  - Process all files in folder (`--folder /path/to/folder`)
   - Auto-process and embed on drop
-  - Connect to Supabase directly
-- [ ] Test locally with sample CSV
+  - Connect to Supabase directly via DATABASE_URL
+- [x] Uses existing `csv_parser` and `embeddings` modules
+- [ ] Test locally with sample CSV *(manual)*
 
-### 8.2 Terraform Reference (NOT DEPLOYED)
-Add to `deploy/terraform/ingestion.tf` for portfolio:
-- [ ] S3 bucket with event notification
-- [ ] Lambda function for processing
-- [ ] IAM roles and policies
-- [ ] Validate with `terraform validate`
+**Usage:**
+```bash
+# Process a single file
+python scripts/ingest.py --file data/transactions.csv
 
-*This shows the S3 → Lambda → pgvector pattern without deploying it.*
+# Process all CSVs in a folder
+python scripts/ingest.py --folder data/
+
+# Watch folder for new files (poll every 5 seconds)
+python scripts/ingest.py --watch ~/Downloads --interval 5
+```
+
+**Files Created:**
+- `scripts/ingest.py` - CLI tool for local CSV ingestion
+
+### 8.2 Terraform Reference (SKIPPED)
+*Deferred - User requested NOT to implement this phase.*
+
+~~Add to `deploy/terraform/ingestion.tf` for portfolio:~~
+- ~~S3 bucket with event notification~~
+- ~~Lambda function for processing~~
+- ~~IAM roles and policies~~
+
+*Can be added later if needed for portfolio reference.*
+
 
 ---
 
@@ -544,6 +565,85 @@ The landing page HTML is at: `/Volumes/Chocoflan/Projects/financial-document-ana
 
 ---
 
+## Phase 8.6: UI/UX Enhancements
+**Executor:** Claude Code | **Time:** 1 hour
+**Status:** ✅ COMPLETE (2025-12-30)
+
+### 8.6.1 Animations & Transitions
+Added micro-interactions and transitions following the aesthetic skill framework (BEAUTIFUL → RIGHT → SATISFYING → PEAK stages):
+
+**New Keyframe Animations (`globals.css`):**
+| Animation | Description | Duration |
+|-----------|-------------|----------|
+| `fade-in-up` | Fade in while sliding up | 0.6s |
+| `scale-bounce` | Scale up with bounce effect | 0.5s |
+| `shake` | Horizontal shake (for errors) | 0.5s |
+| `typing-dot` | Typing indicator dots | 1.4s |
+| `ripple` | Button click ripple effect | 0.6s |
+| `slide-down` | Slide down from top | 0.3s |
+| `spin-pulse` | Rotating with pulse | 2s |
+| `gradient-shift` | Animated gradient movement | 3s |
+| `check-draw` | Checkmark drawing animation | 0.3s |
+| `underline-grow` | Nav link underline on hover | 0.3s |
+| `shimmer` | Skeleton loading effect | 1.5s |
+
+**Utility Classes:**
+- `.stagger-1` through `.stagger-6` - Staggered animation delays (0.1s increments)
+- `.typing-dots` - Three-dot typing indicator
+- `.skeleton` - Loading placeholder with shimmer
+- `.nav-link` - Animated underline on hover
+- `.card-glow` - Card hover glow effect
+- `.btn-ripple` - Button click ripple effect
+- `.gradient-border-animated` - Animated gradient border
+
+### 8.6.2 Context-Aware Empty State
+**Problem:** Empty state always showed query suggestions even without data, confusing new users.
+
+**Solution:** Made `ChatWidget` context-aware with `hasData` prop:
+
+```tsx
+// When hasData is false (new user, no uploads):
+<EmptyState>
+  "Upload a CSV to get started"
+  [Upload CSV Button]
+</EmptyState>
+
+// When hasData is true (data uploaded):
+<EmptyState>
+  "Try asking..."
+  [Query Suggestion Buttons]
+</EmptyState>
+```
+
+**Files Modified:**
+- `frontend/src/components/ChatWidget.tsx` - Added `hasData`, `onUploadClick` props
+- `frontend/src/app/app/page.tsx` - Added `hasData` state with localStorage persistence
+
+### 8.6.3 Data Status Indicator
+Added visual indicator in sidebar when data has been loaded:
+
+```tsx
+{hasData && (
+  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-500/10 border border-brand-500/20">
+    <svg className="w-4 h-4 text-brand-400 animate-check">...</svg>
+    <span className="text-xs text-brand-400">Data loaded</span>
+  </div>
+)}
+```
+
+### 8.6.4 Animation Locations
+| Component | Animations Applied |
+|-----------|-------------------|
+| Landing Page Nav | `nav-link` underline animation |
+| Landing Page Features | `stagger-1` through `stagger-6` on cards |
+| Landing Page Demo | `gradient-border-animated` |
+| Chat Empty State | `animate-fade-in`, `interactive-lift` on buttons |
+| Data Status | `animate-fade-in`, `animate-check` on icon |
+| Error Banner | `animate-slide-up` |
+| Typing Indicator | `typing-dots` animation |
+
+---
+
 ## Phase 9: Portfolio Deliverables
 **Executor:** Manual + Claude Code | **Time:** 2 hours
 
@@ -634,8 +734,9 @@ curl -X POST http://localhost:8000/api/chat \
 | 5. Next.js Frontend | ✅ Complete | 2025-12-29 | 2025-12-29 |
 | 6. Integration Testing | ✅ Complete | 2025-12-29 | 2025-12-29 |
 | 7. Deployment | ✅ Complete | 2025-12-29 | 2025-12-30 |
-| 8. Ingestion Pipeline | ⬜ Not Started | | |
+| 8. Ingestion Pipeline | ✅ Complete | 2025-12-30 | 2025-12-30 |
 | **8.5 Landing Page & Routing** | ✅ Complete | 2025-12-29 | 2025-12-29 |
+| **8.6 UI/UX Enhancements** | ✅ Complete | 2025-12-30 | 2025-12-30 |
 | 9. Portfolio Deliverables | ⬜ Not Started | | |
 
 ---
