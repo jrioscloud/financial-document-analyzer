@@ -17,7 +17,7 @@ def _get_db_params():
 
     Handles special characters in password by using individual params instead of DSN.
     """
-    raw_url = os.getenv("DATABASE_URL", "postgresql://analyzer:analyzer_dev@localhost:5434/financial_analyzer")
+    raw_url = os.getenv("DATABASE_URL", "postgresql://analyzer:analyzer_dev@localhost:5434/financial_analyzer").strip()
 
     # Parse the URL
     if raw_url.startswith("postgresql://") or raw_url.startswith("postgres://"):

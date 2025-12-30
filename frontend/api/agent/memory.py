@@ -14,7 +14,7 @@ from psycopg2.extras import RealDictCursor
 
 def _get_db_params():
     """Parse DATABASE_URL into connection parameters."""
-    raw_url = os.getenv("DATABASE_URL", "postgresql://analyzer:analyzer_dev@localhost:5434/financial_analyzer")
+    raw_url = os.getenv("DATABASE_URL", "postgresql://analyzer:analyzer_dev@localhost:5434/financial_analyzer").strip()
 
     if raw_url.startswith("postgresql://") or raw_url.startswith("postgres://"):
         url = raw_url.replace("postgresql://", "").replace("postgres://", "")
