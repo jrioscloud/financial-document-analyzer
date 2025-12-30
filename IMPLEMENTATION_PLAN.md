@@ -358,22 +358,37 @@ JWT session created → Redirect to /app → Access granted
 - [x] `frontend/src/app/app/page.tsx` - Added logout button
 - [x] `.env.example` - Added Supabase env vars
 
-**Status:** ✅ CODE COMPLETE (2025-12-30)
-**Remaining:** Enable Auth + Create user in Supabase dashboard (manual steps)
+**Status:** ✅ COMPLETE (2025-12-30)
+**User Created:** jaime.rios@hey.com via Supabase Dashboard
 
 ### 7.2 Backend Deployment (Vercel Serverless)
-- [ ] Convert FastAPI to Vercel serverless functions
-- [ ] Create `api/` folder in frontend project
-- [ ] Deploy to Vercel
-- [ ] Set environment variables:
-  - `DATABASE_URL`
-  - `OPENAI_API_KEY`
+- [x] Convert FastAPI to Vercel serverless functions
+- [x] Create `api/` folder in frontend project
+- [x] Deploy to Vercel
+- [x] Set environment variables:
+  - `DATABASE_URL` ✅
+  - `OPENAI_API_KEY` ✅
+  - `NEXT_PUBLIC_SUPABASE_URL` ✅
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY` ✅
+
+**Files Created:**
+- `frontend/api/index.py` - FastAPI app for Vercel
+- `frontend/api/requirements.txt` - Python dependencies
+- `frontend/api/agent/` - LangChain agent module
+- `frontend/api/db/` - Database module
+- `frontend/api/utils/` - CSV parser and embeddings
+- `frontend/vercel.json` - Vercel configuration
+
+**Status:** ✅ COMPLETE (2025-12-30)
 
 ### 7.3 Frontend Deployment
-- [ ] Push to GitHub (public repo)
-- [ ] Connect to Vercel
-- [ ] Auto-deploy on push
-- [ ] Verify live demo works
+- [x] Push to GitHub (public repo)
+- [x] Connect to Vercel
+- [x] Auto-deploy on push
+- [x] Verify live demo works
+
+**Production URL:** https://finanalyzer-demo.vercel.app/
+**Status:** ✅ DEPLOYED (2025-12-30)
 
 ### 7.4 Terraform Reference (NOT DEPLOYED)
 Keep `deploy/terraform/` folder with working IaC code for portfolio reference:
