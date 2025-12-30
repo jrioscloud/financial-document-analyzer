@@ -322,6 +322,42 @@ def generate_report(date_from: str, date_to: str) -> str:
 - [X] Get connection string: `postgresql://postgres:[YOUR-PASSWORD]@db.udutjcqqasibewbmkgej.supabase.co:5432/postgres`
 - [X] Upload sample data via SQL (10 sample transactions inserted)
 
+### 7.1.5 Authentication (Supabase Auth) - REQUIRED BEFORE DEPLOY
+**Decision:** Use Supabase Auth to protect the app from unauthorized access and brute force attacks.
+**Cost:** $0 (included in Supabase free tier - 50,000 MAU)
+
+**Why Supabase Auth over simple password:**
+- Built-in rate limiting (blocks brute force)
+- Exponential backoff on failed attempts
+- Secure password hashing (bcrypt)
+- Session management with JWT tokens
+- Protection against automated/GPT attacks
+
+**Implementation:**
+- [ ] Enable Auth in Supabase dashboard (Authentication → Settings)
+- [ ] Create admin user via Supabase dashboard (only you)
+- [ ] Install `@supabase/supabase-js` in frontend
+- [ ] Create login page (`/login`)
+- [ ] Add auth middleware to protect `/app` route
+- [ ] Protect API endpoints with session validation
+- [ ] Add logout functionality
+
+**Auth Flow:**
+```
+User visits /app → Not authenticated? → Redirect to /login →
+Enter email + password → Supabase validates (rate limited) →
+JWT session created → Redirect to /app → Access granted
+```
+
+**Files to Create/Modify:**
+- `frontend/src/lib/supabase.ts` - Supabase client
+- `frontend/src/app/login/page.tsx` - Login page
+- `frontend/src/middleware.ts` - Route protection
+- `frontend/src/components/AuthProvider.tsx` - Session context
+- `backend/` - Add session validation to endpoints
+
+**Status:** ⬜ Not Started
+
 ### 7.2 Backend Deployment (Vercel Serverless)
 - [ ] Convert FastAPI to Vercel serverless functions
 - [ ] Create `api/` folder in frontend project
@@ -557,6 +593,7 @@ curl -X POST http://localhost:8000/api/chat \
 | **D2: Deployment** | ✅ Vercel + Supabase | $0/month, Terraform kept for reference |
 | **D3: PDF Support** | ✅ CSV only | Faster MVP, PDF can be added later |
 | **D4: Repo Visibility** | ✅ Public | Portfolio visibility, data will be anonymized |
+| **D9: Authentication** | ✅ Supabase Auth | Free, built-in brute force protection, rate limiting |
 
 **Note:** Terraform folder (`deploy/terraform/`) kept for reference but not deployed. Shows IaC skills without incurring AWS costs.
 
