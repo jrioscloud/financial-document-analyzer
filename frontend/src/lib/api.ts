@@ -2,7 +2,9 @@
  * Financial Document Analyzer - API Client
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+// In production, use relative paths (same origin) for Vercel serverless API
+// In development, use NEXT_PUBLIC_API_URL to point to the separate FastAPI server
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
 export interface ChatMessage {
   role: "user" | "assistant" | "system";
