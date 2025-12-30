@@ -2,6 +2,7 @@
 
 import { useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "@/lib/api";
@@ -71,6 +72,7 @@ function InlineToolIndicator({ tools }: { tools: string[] }) {
 function MarkdownContent({ content }: { content: string }) {
   return (
     <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
       components={{
         // Headings
         h1: ({ children }) => (

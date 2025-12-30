@@ -303,6 +303,7 @@ def generate_report(date_from: str, date_to: str) -> str:
 - [x] Date awareness: Agent now knows current date (2025-12-29)
 - [x] Suggestion buttons: Wired up onClick handlers
 - [x] Markdown rendering: Added ReactMarkdown for formatted responses
+- [x] Table rendering: Added `remark-gfm` plugin for GFM table support (2025-12-30)
 
 ### 6.3 Known Issues
 - [ ] Duplicate transactions when CSV uploaded multiple times (needs dedup logic)
