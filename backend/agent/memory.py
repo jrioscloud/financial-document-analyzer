@@ -27,6 +27,7 @@ class SessionMemory:
     - Unique UUID
     - List of messages (user, assistant, system)
     - Timestamps for creation and last update
+    - File context (uploaded file info, date ranges)
     """
 
     def __init__(self, session_id: Optional[str] = None):
@@ -36,6 +37,8 @@ class SessionMemory:
         Args:
             session_id: Existing session ID, or None to create new
         """
+        self.file_context: Optional[Dict] = None  # Track uploaded file metadata
+
         if session_id:
             self.session_id = session_id
             self._load_session()
@@ -178,11 +181,63 @@ class SessionMemory:
         except Exception as e:
             print(f"Warning: Could not clear messages from database: {e}")
         self.messages = []
+        self.file_context = None
+
+    def set_file_context(self, filename: str, date_start: str, date_end: str,
+                         primary_month: str, transaction_count: int):
+        """
+        Set context about the uploaded file.
+
+        This context will be injected into the agent's system prompt
+        so it understands which time period the user is referring to.
+
+        Args:
+            filename: Name of the uploaded file
+            date_start: Start date (YYYY-MM-DD)
+            date_end: End date (YYYY-MM-DD)
+            primary_month: Human-readable month (e.g., "July 2025")
+            transaction_count: Number of transactions in the file
+        """
+        self.file_context = {
+            "filename": filename,
+            "date_start": date_start,
+            "date_end": date_end,
+            "primary_month": primary_month,
+            "transaction_count": transaction_count
+        }
+
+    def get_file_context(self) -> Optional[Dict]:
+        """Get the current file context, if any."""
+        return self.file_context
+
+    def get_file_context_prompt(self) -> str:
+        """
+        Generate a prompt snippet describing the uploaded file context.
+
+        Returns:
+            String to inject into system prompt, or empty string if no context
+        """
+        if not self.file_context:
+            return ""
+
+        return f"""
+IMPORTANT FILE CONTEXT:
+The user has uploaded "{self.file_context['filename']}" containing {self.file_context['transaction_count']} transactions.
+Data date range: {self.file_context['date_start']} to {self.file_context['date_end']} (primarily {self.file_context['primary_month']}).
+When the user refers to "this month", "my spending", or "the file", they mean the data from {self.file_context['primary_month']} - NOT the current calendar month.
+Always use dates within {self.file_context['date_start']} to {self.file_context['date_end']} for queries about this data.
+"""
+
+
+# In-memory session store (for file context persistence within a session)
+_session_store: Dict[str, SessionMemory] = {}
 
 
 def get_or_create_session(session_id: Optional[str] = None) -> SessionMemory:
     """
     Get existing session or create new one.
+
+    Uses in-memory store to preserve file context within a session.
 
     Args:
         session_id: Optional existing session ID
@@ -190,4 +245,13 @@ def get_or_create_session(session_id: Optional[str] = None) -> SessionMemory:
     Returns:
         SessionMemory instance
     """
-    return SessionMemory(session_id)
+    global _session_store
+
+    if session_id and session_id in _session_store:
+        # Return existing session with preserved file context
+        return _session_store[session_id]
+
+    # Create new session
+    session = SessionMemory(session_id)
+    _session_store[session.session_id] = session
+    return session

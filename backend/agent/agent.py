@@ -13,14 +13,17 @@ from langgraph.prebuilt import create_react_agent
 from .tools import ALL_TOOLS
 
 
-def get_system_prompt() -> str:
-    """Generate system prompt with current date."""
+def get_system_prompt(file_context: str = "") -> str:
+    """Generate system prompt with current date and optional file context."""
     today = datetime.now().strftime("%Y-%m-%d")
     current_month = datetime.now().strftime("%B %Y")
 
+    # File context overrides calendar-based date interpretation
+    context_section = file_context if file_context else f"IMPORTANT: Today's date is {today}. When users refer to \"this month\", \"last month\", etc., calculate dates relative to {current_month}."
+
     return f"""You are a helpful financial analyst assistant. You help users understand their spending patterns and financial data.
 
-IMPORTANT: Today's date is {today}. When users refer to "this month", "last month", etc., calculate dates relative to {current_month}.
+{context_section}
 
 You have access to the following tools:
 - search_transactions: Search for specific transactions by description
@@ -50,7 +53,8 @@ Always be helpful and provide actionable insights when possible.
 
 def create_agent(
     model_name: Optional[str] = None,
-    temperature: float = 0.0
+    temperature: float = 0.0,
+    file_context: str = ""
 ):
     """
     Create and configure the LangChain agent.
@@ -58,6 +62,7 @@ def create_agent(
     Args:
         model_name: OpenAI model to use (default: from env or gpt-4o-mini)
         temperature: Model temperature (default: 0 for consistent responses)
+        file_context: Optional file context prompt to inject (overrides calendar dates)
 
     Returns:
         Configured agent ready to process messages
@@ -76,7 +81,7 @@ def create_agent(
     agent = create_react_agent(
         model=llm,
         tools=ALL_TOOLS,
-        prompt=get_system_prompt()
+        prompt=get_system_prompt(file_context)
     )
 
     return agent

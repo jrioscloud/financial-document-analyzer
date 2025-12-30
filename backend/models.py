@@ -44,11 +44,20 @@ class ChatHistory(BaseModel):
 # Upload Models
 # =============================================================================
 
+class DateRange(BaseModel):
+    """Date range for uploaded transactions."""
+    start: str  # YYYY-MM-DD
+    end: str    # YYYY-MM-DD
+    primary_month: str  # Human readable, e.g., "July 2025"
+
+
 class UploadResponse(BaseModel):
     """Response body for /api/upload endpoint."""
     transactions_count: int
     status: str
     filename: str
+    date_range: Optional[DateRange] = None
+    session_id: Optional[str] = None  # Session with file context for subsequent chats
 
 
 # =============================================================================
