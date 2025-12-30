@@ -9,7 +9,9 @@ import type { ChatMessage } from "@/lib/api";
 interface ChatWidgetProps {
   messages: ChatMessage[];
   isLoading?: boolean;
+  hasData?: boolean;
   onSuggestionClick?: (text: string) => void;
+  onUploadClick?: () => void;
 }
 
 // Tool icon mapping for visual feedback
@@ -253,7 +255,15 @@ function LoadingIndicator() {
   );
 }
 
-function EmptyState({ onSuggestionClick }: { onSuggestionClick?: (text: string) => void }) {
+function EmptyState({
+  hasData,
+  onSuggestionClick,
+  onUploadClick
+}: {
+  hasData?: boolean;
+  onSuggestionClick?: (text: string) => void;
+  onUploadClick?: () => void;
+}) {
   const suggestions = [
     { icon: "💰", text: "How much did I spend on food this month?" },
     { icon: "📊", text: "What are my top expense categories?" },
@@ -263,9 +273,13 @@ function EmptyState({ onSuggestionClick }: { onSuggestionClick?: (text: string) 
   return (
     <div className="flex flex-col items-center justify-center h-full text-center px-6 animate-fade-in">
       {/* Icon */}
-      <div className="w-16 h-16 rounded-2xl gradient-brand flex items-center justify-center glow mb-6">
+      <div className="w-16 h-16 rounded-2xl gradient-brand flex items-center justify-center glow mb-6 animate-scale-bounce">
         <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          {hasData ? (
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          ) : (
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+          )}
         </svg>
       </div>
 
@@ -273,34 +287,86 @@ function EmptyState({ onSuggestionClick }: { onSuggestionClick?: (text: string) 
       <h2 className="text-xl font-semibold text-foreground mb-2">
         Financial Assistant
       </h2>
-      <p className="text-sm text-muted-foreground mb-8 max-w-md">
-        Ask questions about your spending, income, and financial patterns. Upload a CSV to get started.
-      </p>
 
-      {/* Suggestions */}
-      <div className="space-y-2 w-full max-w-md">
-        <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3">
-          Try asking
-        </p>
-        {suggestions.map((suggestion, i) => (
+      {hasData ? (
+        <>
+          <p className="text-sm text-muted-foreground mb-8 max-w-md">
+            Ask questions about your spending, income, and financial patterns.
+          </p>
+
+          {/* Suggestions - only show when data exists */}
+          <div className="space-y-2 w-full max-w-md">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-3">
+              Try asking
+            </p>
+            {suggestions.map((suggestion, i) => (
+              <button
+                key={i}
+                onClick={() => onSuggestionClick?.(suggestion.text)}
+                className={`stagger-item stagger-${i + 1} w-full text-left px-4 py-3 rounded-xl glass
+                          text-sm text-muted-foreground hover:text-foreground
+                          border border-transparent hover:border-brand-500/20
+                          transition-all duration-200 interactive-scale btn-ripple`}
+              >
+                <span className="mr-2">{suggestion.icon}</span>
+                {suggestion.text}
+              </button>
+            ))}
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="text-sm text-muted-foreground mb-6 max-w-md">
+            Upload a CSV file to get started analyzing your financial data.
+          </p>
+
+          {/* Upload CTA - show when no data */}
           <button
-            key={i}
-            onClick={() => onSuggestionClick?.(suggestion.text)}
-            className="w-full text-left px-4 py-3 rounded-xl glass
-                      text-sm text-muted-foreground hover:text-foreground
-                      border border-transparent hover:border-brand-500/20
-                      transition-all duration-200 interactive-scale"
+            onClick={onUploadClick}
+            className="px-6 py-3 gradient-brand rounded-xl text-white font-medium
+                      flex items-center gap-2 btn-glow interactive-lift mb-6"
           >
-            <span className="mr-2">{suggestion.icon}</span>
-            {suggestion.text}
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            </svg>
+            Upload CSV File
           </button>
-        ))}
-      </div>
+
+          {/* Supported formats */}
+          <div className="flex flex-wrap justify-center gap-2">
+            <p className="text-xs text-muted-foreground mr-2">Supported:</p>
+            {["Upwork", "Nu Bank", "BBVA"].map((format) => (
+              <span
+                key={format}
+                className="px-2 py-0.5 text-[10px] font-medium rounded-full
+                         bg-secondary/50 text-muted-foreground"
+              >
+                {format}
+              </span>
+            ))}
+          </div>
+
+          {/* Preview of what you can ask */}
+          <div className="mt-8 pt-6 border-t border-border/30 w-full max-w-md">
+            <p className="text-xs text-muted-foreground mb-3">
+              Once uploaded, you&apos;ll be able to ask:
+            </p>
+            <div className="space-y-1.5 text-left">
+              {suggestions.map((suggestion, i) => (
+                <p key={i} className="text-xs text-muted-foreground/60">
+                  <span className="mr-1.5">{suggestion.icon}</span>
+                  {suggestion.text}
+                </p>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
 
-export function ChatWidget({ messages, isLoading, onSuggestionClick }: ChatWidgetProps) {
+export function ChatWidget({ messages, isLoading, hasData, onSuggestionClick, onUploadClick }: ChatWidgetProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
@@ -314,7 +380,7 @@ export function ChatWidget({ messages, isLoading, onSuggestionClick }: ChatWidge
     <ScrollArea className="flex-1">
       <div className="p-6 space-y-4">
         {messages.length === 0 ? (
-          <EmptyState onSuggestionClick={onSuggestionClick} />
+          <EmptyState hasData={hasData} onSuggestionClick={onSuggestionClick} onUploadClick={onUploadClick} />
         ) : (
           <>
             {messages.map((message, index) => (

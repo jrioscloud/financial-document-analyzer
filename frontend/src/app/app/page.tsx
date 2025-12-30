@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ChatWidget } from "@/components/ChatWidget";
 import { ChatInput } from "@/components/ChatInput";
@@ -10,8 +10,9 @@ import { sendMessage, getHistory, type ChatMessage, type UploadResponse } from "
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
-// Session ID storage key
+// Storage keys
 const SESSION_KEY = "financial-analyzer-session";
+const HAS_DATA_KEY = "financial-analyzer-has-data";
 
 export default function AppPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -19,8 +20,18 @@ export default function AppPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [hasData, setHasData] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const supabase = createClient();
+
+  // Load hasData from localStorage on mount
+  useEffect(() => {
+    const storedHasData = localStorage.getItem(HAS_DATA_KEY);
+    if (storedHasData === "true") {
+      setHasData(true);
+    }
+  }, []);
 
   // Get current user on mount
   useEffect(() => {
@@ -99,12 +110,25 @@ export default function AppPage() {
   );
 
   const handleUploadComplete = (result: UploadResponse) => {
+    // Mark that we have data
+    setHasData(true);
+    localStorage.setItem(HAS_DATA_KEY, "true");
+
     // Add a system-like message about the upload
     const uploadMessage: ChatMessage = {
       role: "assistant",
       content: `${result.status}\n\nYou can now ask questions about your ${result.transactions_count} transactions from "${result.filename}".`,
     };
     setMessages((prev) => [...prev, uploadMessage]);
+  };
+
+  // Handle upload click from empty state
+  const handleUploadClick = () => {
+    // Trigger the file input in the FileUpload component
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
   };
 
   const handleUploadError = (errorMsg: string) => {
@@ -173,6 +197,18 @@ export default function AppPage() {
           />
         </div>
 
+        {/* Data Status Indicator */}
+        {hasData && (
+          <div className="px-4 pb-4 animate-fade-in">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-500/10 border border-brand-500/20">
+              <svg className="w-4 h-4 text-brand-400 animate-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-xs text-brand-400">Data loaded</span>
+            </div>
+          </div>
+        )}
+
         {/* Spacer */}
         <div className="flex-1" />
 
@@ -232,7 +268,13 @@ export default function AppPage() {
             </div>
 
             {/* Chat Content */}
-            <ChatWidget messages={messages} isLoading={isLoading} onSuggestionClick={handleSend} />
+            <ChatWidget
+              messages={messages}
+              isLoading={isLoading}
+              hasData={hasData}
+              onSuggestionClick={handleSend}
+              onUploadClick={handleUploadClick}
+            />
 
             {/* Error Banner */}
             {error && (

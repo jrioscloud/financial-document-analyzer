@@ -100,10 +100,10 @@ export default function LandingPage() {
               <span className="text-xl font-semibold tracking-tight">FinAnalyzer</span>
             </div>
             <div className="flex items-center gap-6">
-              <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200">
+              <a href="#features" className="nav-link text-sm text-muted-foreground hover:text-foreground">
                 Features
               </a>
-              <a href="#demo" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200">
+              <a href="#demo" className="nav-link text-sm text-muted-foreground hover:text-foreground">
                 Demo
               </a>
               <Link
@@ -155,7 +155,7 @@ export default function LandingPage() {
       {/* Chat Interface Preview */}
       <section id="demo" className="relative z-10 px-6 pb-24">
         <div className="max-w-5xl mx-auto">
-          <div className="gradient-border rounded-2xl glow">
+          <div className="gradient-border-animated rounded-2xl glow animate-glow-pulse">
             <div className="bg-background rounded-2xl overflow-hidden">
               {/* Chat Header */}
               <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
@@ -286,14 +286,14 @@ export default function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {tools.map((tool) => (
+            {tools.map((tool, index) => (
               <div
                 key={tool.name}
-                className={`glass rounded-2xl p-6 interactive-lift ${
+                className={`stagger-item glass rounded-2xl p-6 interactive-lift card-glow stagger-${index + 1} ${
                   tool.featured ? "gradient-brand-subtle border-brand-500/20" : ""
                 }`}
               >
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${tool.color} flex items-center justify-center mb-4`}>
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${tool.color} flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110`}>
                   <span className={tool.textColor}>{tool.icon}</span>
                 </div>
                 <h3 className="text-lg font-semibold mb-2">{tool.name}</h3>
