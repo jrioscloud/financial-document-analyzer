@@ -47,7 +47,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="flex justify-center mb-8">
           <Link href="/" className="flex items-center gap-3">
-            <BrandIcon size="lg" />
+            <BrandIcon className="w-10 h-10" />
             <span className="text-2xl font-bold text-foreground">
               Financial Analyzer
             </span>
