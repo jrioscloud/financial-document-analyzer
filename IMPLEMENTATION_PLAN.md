@@ -334,8 +334,8 @@ def generate_report(date_from: str, date_to: str) -> str:
 - Protection against automated/GPT attacks
 
 **Implementation:**
-- [ ] Enable Auth in Supabase dashboard (Authentication → Settings) *(manual)*
-- [ ] Create admin user via Supabase dashboard (only you) *(manual)*
+- [x] Enable Auth in Supabase dashboard (Authentication → Settings)
+- [x] Create admin user via Supabase dashboard: jaime.rios@hey.com
 - [x] Install `@supabase/supabase-js` in frontend
 - [x] Create login page (`/login`)
 - [x] Add auth middleware to protect `/app` route
