@@ -13,7 +13,10 @@ from contextlib import contextmanager
 import urllib.parse
 
 def _get_db_params():
-    """Parse DATABASE_URL into connection parameters."""
+    """Parse DATABASE_URL into connection parameters.
+
+    Handles special characters in password by using individual params instead of DSN.
+    """
     raw_url = os.getenv("DATABASE_URL", "postgresql://analyzer:analyzer_dev@localhost:5434/financial_analyzer")
 
     # Parse the URL
@@ -66,10 +69,17 @@ def get_connection():
                 cur.execute("SELECT * FROM transactions")
     """
     params = _get_db_params()
-    if "dsn" in params:
-        conn = psycopg2.connect(params["dsn"])
-    else:
-        conn = psycopg2.connect(**params)
+    try:
+        if "dsn" in params:
+            conn = psycopg2.connect(params["dsn"])
+        else:
+            # Debug: print connection params (without password)
+            debug_params = {k: v for k, v in params.items() if k != "password"}
+            print(f"Connecting with params: {debug_params}")
+            conn = psycopg2.connect(**params)
+    except Exception as e:
+        debug_params = {k: v for k, v in params.items() if k != "password"}
+        raise Exception(f"Connection failed with params {debug_params}: {e}")
     try:
         yield conn
     finally:
