@@ -10,7 +10,24 @@ from psycopg2.extras import RealDictCursor
 from contextlib import contextmanager
 
 # Database connection parameters
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://analyzer:analyzer_dev@localhost:5434/financial_analyzer")
+_raw_url = os.getenv("DATABASE_URL", "postgresql://analyzer:analyzer_dev@localhost:5434/financial_analyzer")
+# URL-encode password if it contains special characters
+import urllib.parse
+if "@" in _raw_url and "://" in _raw_url:
+    # Parse the URL and re-encode the password
+    prefix, rest = _raw_url.split("://", 1)
+    if "@" in rest:
+        userinfo, hostinfo = rest.rsplit("@", 1)
+        if ":" in userinfo:
+            user, password = userinfo.split(":", 1)
+            password_encoded = urllib.parse.quote(password, safe="")
+            DATABASE_URL = f"{prefix}://{user}:{password_encoded}@{hostinfo}"
+        else:
+            DATABASE_URL = _raw_url
+    else:
+        DATABASE_URL = _raw_url
+else:
+    DATABASE_URL = _raw_url
 
 
 @contextmanager
