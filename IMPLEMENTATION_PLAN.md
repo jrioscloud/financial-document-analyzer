@@ -651,13 +651,15 @@ Data date range: 2025-06-23 to 2025-07-20 (primarily July 2025).
 When user refers to "this month" or "my spending", assume they mean the uploaded data period (July 2025), not the current calendar month.
 ```
 
-### Files to Modify
-- [ ] `backend/main.py` - Calculate and return date range from upload
-- [ ] `backend/agent/memory.py` - Add context storage methods
-- [ ] `backend/agent/agent.py` - Inject file context into system prompt
-- [ ] `backend/models.py` - Add date_range to UploadResponse
+### Files Modified
+- [x] `backend/main.py` - Calculate date range, store in session, return in response
+- [x] `backend/agent/memory.py` - Add file context storage (set_file_context, get_file_context_prompt)
+- [x] `backend/agent/agent.py` - Inject file context into system prompt via create_agent()
+- [x] `backend/models.py` - Add DateRange model, session_id to UploadResponse
 
-### Status: ⬜ Not Started
+### Status: ✅ COMPLETE (2025-12-30)
+
+**Commit:** `fix: Agent now uses uploaded file date range instead of current calendar month`
 
 ---
 
