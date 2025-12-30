@@ -118,35 +118,59 @@ async def chat(request: ChatRequest):
     Main chat endpoint (requires authentication).
     Process user message through LangChain agent with financial analysis tools.
     """
-    ensure_db()
+    import traceback
+
+    try:
+        ensure_db()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"DB init error: {str(e)}")
 
     try:
         # 1. Get or create session
         session = get_or_create_session(request.session_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Session error: {str(e)}")
 
+    try:
         # 2. Add user message to history
         session.add_message("user", request.message)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Add message error: {str(e)}")
 
+    try:
         # 3. Get conversation history for context
         history = session.get_messages_for_agent()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Get history error: {str(e)}")
 
+    try:
         # 4. Get file context if available (for date interpretation)
         file_context = session.get_file_context_prompt()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"File context error: {str(e)}")
 
+    try:
         # 5. Run agent with message and history
         agent = get_agent(file_context)
-        response, tools_used = run_agent(agent, request.message, history[:-1])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Agent creation error: {str(e)}\n{traceback.format_exc()}")
 
+    try:
+        response, tools_used = run_agent(agent, request.message, history[:-1])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Agent run error: {str(e)}\n{traceback.format_exc()}")
+
+    try:
         # 6. Save assistant response to history
         session.add_message("assistant", response, tools_used)
-
-        return ChatResponse(
-            answer=response,
-            session_id=session.session_id,
-            tools_used=tools_used
-        )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing chat: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Save response error: {str(e)}")
+
+    return ChatResponse(
+        answer=response,
+        session_id=session.session_id,
+        tools_used=tools_used
+    )
 
 
 @app.post("/api/upload", response_model=UploadResponse)
