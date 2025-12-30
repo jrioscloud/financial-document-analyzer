@@ -357,7 +357,9 @@ JWT session created → Redirect to /app → Access granted
 - [x] `.env.example` - Added Supabase env vars
 
 **Status:** ✅ COMPLETE (2025-12-30)
-**User Created:** jaime.rios@hey.com via Supabase Dashboard
+
+**Test User Credentials:**
+- See `frontend/.env.local` for test user credentials (not committed)
 
 ### 7.2 Backend Deployment (Vercel Serverless)
 - [x] Convert FastAPI to Vercel serverless functions
