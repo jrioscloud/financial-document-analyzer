@@ -12,12 +12,52 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 
+def _get_db_params():
+    """Parse DATABASE_URL into connection parameters."""
+    raw_url = os.getenv("DATABASE_URL", "postgresql://analyzer:analyzer_dev@localhost:5434/financial_analyzer")
+
+    if raw_url.startswith("postgresql://") or raw_url.startswith("postgres://"):
+        url = raw_url.replace("postgresql://", "").replace("postgres://", "")
+
+        if "@" in url:
+            userinfo, hostinfo = url.rsplit("@", 1)
+            if ":" in userinfo:
+                user, password = userinfo.split(":", 1)
+            else:
+                user, password = userinfo, None
+        else:
+            user, password = None, None
+            hostinfo = url
+
+        if "/" in hostinfo:
+            hostport, database = hostinfo.split("/", 1)
+        else:
+            hostport, database = hostinfo, "postgres"
+
+        if ":" in hostport:
+            host, port = hostport.split(":", 1)
+        else:
+            host, port = hostport, "5432"
+
+        return {
+            "host": host,
+            "port": int(port),
+            "database": database,
+            "user": user,
+            "password": password
+        }
+    return None
+
+
 def get_db_connection():
-    """Get database connection using shared helper."""
-    from db.init import get_connection
-    # Use context manager but return the connection
-    conn = get_connection().__enter__()
-    return conn
+    """Get database connection with special char support."""
+    params = _get_db_params()
+    if params:
+        return psycopg2.connect(**params)
+    else:
+        return psycopg2.connect(
+            os.getenv("DATABASE_URL", "postgresql://analyzer:analyzer_dev@localhost:5434/financial_analyzer")
+        )
 
 
 class SessionMemory:
