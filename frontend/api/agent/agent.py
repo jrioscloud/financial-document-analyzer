@@ -10,7 +10,47 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from langgraph.prebuilt import create_react_agent
 
-from .tools import ALL_TOOLS
+from .tools import ALL_TOOLS, get_db_connection
+
+
+def get_available_data_context() -> str:
+    """Query the database to get info about available transaction data."""
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                # Get date range and count
+                cur.execute("""
+                    SELECT
+                        COUNT(*) as total,
+                        MIN(date) as min_date,
+                        MAX(date) as max_date
+                    FROM transactions
+                """)
+                row = cur.fetchone()
+
+                if not row or row[0] == 0:
+                    return ""
+
+                total, min_date, max_date = row
+
+                # Get categories
+                cur.execute("""
+                    SELECT DISTINCT category FROM transactions
+                    WHERE category IS NOT NULL
+                    ORDER BY category LIMIT 10
+                """)
+                categories = [r[0] for r in cur.fetchall()]
+
+                return f"""
+AVAILABLE DATA CONTEXT:
+The database contains {total} transactions from {min_date} to {max_date}.
+Available categories: {', '.join(categories)}
+IMPORTANT: When users ask about "this month", "last month", or recent data, check against THIS date range ({min_date} to {max_date}), NOT the current calendar date.
+If the user asks for "the last month you have available", use {max_date.strftime('%Y-%m') if hasattr(max_date, 'strftime') else max_date[:7]} as the reference.
+"""
+    except Exception as e:
+        print(f"Warning: Could not get data context: {e}")
+        return ""
 
 
 def get_system_prompt(file_context: str = "") -> str:
@@ -18,8 +58,16 @@ def get_system_prompt(file_context: str = "") -> str:
     today = datetime.now().strftime("%Y-%m-%d")
     current_month = datetime.now().strftime("%B %Y")
 
+    # Get actual data range from database
+    data_context = get_available_data_context()
+
     # File context overrides calendar-based date interpretation
-    context_section = file_context if file_context else f"IMPORTANT: Today's date is {today}. When users refer to \"this month\", \"last month\", etc., calculate dates relative to {current_month}."
+    if file_context:
+        context_section = file_context
+    elif data_context:
+        context_section = data_context
+    else:
+        context_section = f"IMPORTANT: Today's date is {today}. When users refer to \"this month\", \"last month\", etc., calculate dates relative to {current_month}."
 
     return f"""You are a helpful financial analyst assistant. You help users understand their spending patterns and financial data.
 
