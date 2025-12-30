@@ -208,10 +208,12 @@ async def upload_file(
         # 4. Store in database
         stored_count = store_transactions(transactions_with_embeddings)
 
-        # 5. Calculate date range
-        dates = [t["date"] for t in transactions if t.get("date")]
+        # 5. Calculate date range (use transactions_with_embeddings which are dicts)
+        date_strings = [t.get("date") for t in transactions_with_embeddings if t.get("date")]
         date_range = None
-        if dates:
+        if date_strings:
+            # Parse date strings to datetime objects
+            dates = [datetime.strptime(d, "%Y-%m-%d") for d in date_strings]
             min_date = min(dates)
             max_date = max(dates)
             month_counts = Counter(d.strftime("%B %Y") for d in dates)
