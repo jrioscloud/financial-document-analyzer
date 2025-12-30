@@ -25,8 +25,7 @@ from utils.csv_parser import parse_csv
 from utils.embeddings import embed_transactions
 from db.init import init_db, store_transactions
 
-# Global agent instance (used when no file context)
-_agent = None
+# Database initialization flag (lazy init for serverless)
 _db_initialized = False
 
 
@@ -63,14 +62,13 @@ async def verify_auth(authorization: Optional[str] = Header(None)):
 
 
 def get_agent(file_context: str = ""):
-    """Get or create agent instance. Creates new agent if file_context provided."""
-    global _agent
-    if file_context:
-        # Create new agent with file context for this session
-        return create_agent(file_context=file_context)
-    if _agent is None:
-        _agent = create_agent()
-    return _agent
+    """Create agent instance with current data context.
+
+    Always creates fresh agent to ensure data context is current.
+    The agent queries the DB for available date ranges on each request.
+    """
+    # Always create fresh agent - data context is queried from DB each time
+    return create_agent(file_context=file_context)
 
 
 def ensure_db():
