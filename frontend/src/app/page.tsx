@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { BrandIcon } from "@/components/BrandIcon";
 
@@ -140,12 +142,12 @@ export default function LandingPage() {
               </svg>
               Upload Documents
             </Link>
-            <a
-              href="#demo"
+            <button
+              onClick={() => alert("🎬 YouTube demo video coming soon!\n\nFor now, scroll down to see the interactive demo.")}
               className="w-full sm:w-auto px-8 py-4 glass hover:bg-secondary/50 rounded-xl text-lg font-medium transition-colors duration-200"
             >
               Watch Demo
-            </a>
+            </button>
           </div>
         </div>
       </section>
