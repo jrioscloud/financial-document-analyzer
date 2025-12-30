@@ -262,7 +262,7 @@ financial-document-analyzer/
 
 ## Portfolio Deliverables
 
-- [ ] Live demo: `https://financial-analyzer.vercel.app`
+- [x] Live demo: `https://finanalyzer-demo.vercel.app`
 - [ ] Architecture diagram (for Upwork portfolio)
 - [ ] Case study article: "Building a RAG Financial Analyzer"
 - [ ] Video walkthrough (3-5 min)
