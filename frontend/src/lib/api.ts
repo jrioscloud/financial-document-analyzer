@@ -13,14 +13,33 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
  */
 async function getAuthHeaders(): Promise<HeadersInit> {
   const supabase = createClient();
+
+  // Try getSession first, then getUser as fallback
   const { data: { session } } = await supabase.auth.getSession();
 
-  if (!session?.access_token) {
-    throw new Error("Not authenticated");
+  if (session?.access_token) {
+    return {
+      "Authorization": `Bearer ${session.access_token}`,
+    };
+  }
+
+  // If session is null, try to get a fresh session
+  const { data: { user }, error } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    console.error("Auth error:", error?.message || "No user found");
+    throw new Error("Not authenticated - please log in again");
+  }
+
+  // Get session again after getUser (might have refreshed)
+  const { data: { session: refreshedSession } } = await supabase.auth.getSession();
+
+  if (!refreshedSession?.access_token) {
+    throw new Error("Session expired - please log in again");
   }
 
   return {
-    "Authorization": `Bearer ${session.access_token}`,
+    "Authorization": `Bearer ${refreshedSession.access_token}`,
   };
 }
 
