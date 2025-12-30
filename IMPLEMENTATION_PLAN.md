@@ -316,11 +316,11 @@ def generate_report(date_from: str, date_to: str) -> str:
 **Chosen:** Vercel + Supabase ($0/month)
 
 ### 7.1 Supabase Setup
-- [ ] Create Supabase project at https://supabase.com
-- [ ] Enable pgvector extension (Database → Extensions → vector)
-- [ ] Run schema.sql in SQL Editor
-- [ ] Get connection string (Settings → Database → Connection string)
-- [ ] Upload sample data via SQL or API
+- [X] Create Supabase project at https://supabase.com
+- [X] Enable pgvector extension (Database → Extensions → vector)
+- [X] Run schema.sql in SQL Editor (executed 2025-12-29)
+- [X] Get connection string: `postgresql://postgres:[YOUR-PASSWORD]@db.udutjcqqasibewbmkgej.supabase.co:5432/postgres`
+- [X] Upload sample data via SQL (10 sample transactions inserted)
 
 ### 7.2 Backend Deployment (Vercel Serverless)
 - [ ] Convert FastAPI to Vercel serverless functions
@@ -572,7 +572,7 @@ curl -X POST http://localhost:8000/api/chat \
 | 4. FastAPI Backend | ✅ Complete | 2025-12-29 | 2025-12-29 |
 | 5. Next.js Frontend | ✅ Complete | 2025-12-29 | 2025-12-29 |
 | 6. Integration Testing | ✅ Complete | 2025-12-29 | 2025-12-29 |
-| 7. Deployment | ⬜ Not Started | | |
+| 7. Deployment | 🔄 In Progress | 2025-12-29 | |
 | 8. Ingestion Pipeline | ⬜ Not Started | | |
 | **8.5 Landing Page & Routing** | ✅ Complete | 2025-12-29 | 2025-12-29 |
 | 9. Portfolio Deliverables | ⬜ Not Started | | |
@@ -598,16 +598,179 @@ Based on 223 RAG/AI/Document jobs captured in the last 60 days:
    - Use `pdfplumber` for text extraction
    - Same embedding pipeline as CSV
    - Shows document versatility
+   - **Status:** ✅ APPROVED - Add to Phase 10
 
 2. **Spending Charts (Visual Impact)** - Makes demos more impressive
    - Pie chart by category
    - Bar chart for monthly comparison
    - Use Recharts library
+   - **Status:** ✅ APPROVED - Add to Phase 10
+   - **Implementation:** Add `generate_chart` tool that returns structured JSON
+   - **System prompt addition:** "You can generate charts using Recharts. Return chart data as JSON with {chart_type, data, title}."
+   - **Frontend:** Check response for chart JSON → render with Recharts component
 
 3. **Voice Input (Differentiator)** - Unique feature for demos
    - OpenAI Whisper API
    - "Ask with voice" button
    - Shows multi-modal capability
+   - **Status:** ⬜ Deferred (nice-to-have)
+
+---
+
+## Bug Fix: File Date Context (Priority: HIGH)
+
+**Problem:** When user uploads `BBVA_TDC_Julio_2025.csv` and asks "show me this month's spending", the agent interprets "this month" as December 2025 (current calendar month) instead of July 2025 (the file's date range).
+
+**Root Cause:** Upload response returns transaction count but doesn't pass file metadata to the agent's context. The agent has no knowledge of:
+- Which file was uploaded
+- What date range the transactions cover
+- What the "relevant" time period is for this session
+
+### Proposed Fix
+
+**Step 1: Calculate date range after upload**
+```python
+# In upload endpoint, after parsing:
+min_date = min(t['date'] for t in transactions)
+max_date = max(t['date'] for t in transactions)
+```
+
+**Step 2: Store in session metadata**
+```python
+session.set_context({
+    "last_uploaded_file": filename,
+    "data_date_range": {"start": min_date, "end": max_date},
+    "data_month": "July 2025"  # Human-readable
+})
+```
+
+**Step 3: Inject into agent system prompt**
+```
+User uploaded "BBVA_TDC_Julio_2025.csv" with 109 transactions.
+Data date range: 2025-06-23 to 2025-07-20 (primarily July 2025).
+When user refers to "this month" or "my spending", assume they mean the uploaded data period (July 2025), not the current calendar month.
+```
+
+### Files to Modify
+- [ ] `backend/main.py` - Calculate and return date range from upload
+- [ ] `backend/agent/memory.py` - Add context storage methods
+- [ ] `backend/agent/agent.py` - Inject file context into system prompt
+- [ ] `backend/models.py` - Add date_range to UploadResponse
+
+### Status: ⬜ Not Started
+
+---
+
+## Architecture: LLM Categorization at Ingestion (Priority: MEDIUM)
+
+**Problem:** Categories from bank CSVs are inconsistent and in Spanish (e.g., "Conveniencia", "Supermercado"). User wants LLM to normalize categories during upload while preserving original data.
+
+### Current Flow
+```
+CSV Upload → Parse (keep bank's category) → Generate Embeddings → Store
+```
+
+### Proposed Flow ✅ APPROVED
+```
+CSV Upload → Parse → LLM Categorize (batch) → Generate Embeddings → Store
+                          ↓
+              Preserve original in JSONB
+```
+
+**Frontend Navigation:** No new tab needed for MVP. Categorization happens silently during upload. Users interact via chat. Optional "Transactions" browser tab can be added later for viewing/filtering data.
+
+### Schema Changes
+
+```sql
+-- Current:
+category TEXT,           -- Bank's raw category
+original_data JSONB,     -- Full original row
+
+-- Proposed:
+category TEXT,           -- LLM-assigned normalized category
+original_category TEXT,  -- Bank's raw category (for audit/comparison)
+original_data JSONB,     -- Full original row (already exists)
+```
+
+### Category Options
+
+**Option A: Predefined List (Recommended for Consistency)**
+```python
+NORMALIZED_CATEGORIES = [
+    "Food & Dining",       # Restaurants, groceries, coffee, delivery
+    "Transportation",      # Uber, DiDi, gas, parking, flights
+    "Shopping",            # Amazon, retail, clothing
+    "Bills & Utilities",   # Phone, internet, electricity, rent
+    "Entertainment",       # Netflix, Spotify, games, movies
+    "Health & Wellness",   # Pharmacy, gym, doctor, vitamins
+    "Subscriptions",       # Recurring digital services
+    "Income",              # Salary, freelance, refunds
+    "Transfers",           # Between accounts, payments
+    "Other"                # Uncategorized
+]
+```
+
+**Option B: LLM-Inferred (More Flexible)**
+- Let LLM create categories based on transaction patterns
+- Less consistent across uploads
+- May create duplicates ("Food" vs "Food & Dining")
+
+### Batching Strategy (Cost Optimization) ✅ APPROVED
+Instead of 1 LLM call per transaction, batch 20-50 transactions:
+
+```python
+def categorize_batch(transactions: list[dict]) -> dict[int, str]:
+    """Categorize multiple transactions in one LLM call."""
+    prompt = f"""
+Categorize these transactions. Use ONLY these categories:
+{NORMALIZED_CATEGORIES}
+
+Transactions:
+{format_transactions(transactions)}
+
+Return JSON mapping index to category:
+{{"0": "Food & Dining", "1": "Bills & Utilities", ...}}
+"""
+    response = llm.invoke(prompt)
+    return json.loads(response)
+```
+
+**Cost Estimate:**
+- 100 transactions ≈ 5,000 tokens
+- gpt-4o-mini: $0.15/1M input tokens
+- Cost per 100 transactions: ~$0.001
+
+### Embedding Enhancement ✅ APPROVED
+Embeddings will include the normalized category for improved semantic search:
+
+**Current:**
+```
+"7 ELEVEN T2695 TORREAX"
+```
+
+**Enhanced:**
+```
+"7 ELEVEN T2695 TORREAX [Food & Dining] convenience store purchase"
+```
+
+This could improve semantic search relevance.
+
+### Decision Points
+
+| Question | Options | Decision |
+|----------|---------|----------|
+| **D5: Category List** | A) Predefined list (consistent) / B) LLM-inferred (flexible) | ✅ A - Predefined |
+| **D6: Language** | A) English / B) Spanish / C) Both (display preference) | ⬜ TBD |
+| **D7: Re-categorization** | A) Allow user corrections / B) Read-only | ✅ B - Read-only (MVP) |
+| **D8: Enhanced Embeddings** | A) Include category in embedding / B) Description only | ✅ A - Include category |
+
+### Files to Create/Modify
+- [ ] `backend/utils/categorizer.py` - New: LLM categorization logic
+- [ ] `backend/utils/csv_parser.py` - Integrate categorization into pipeline
+- [ ] `backend/db/schema.sql` - Add `original_category` column
+- [ ] `backend/db/migrations/002_add_original_category.sql` - Migration for existing data
+
+### Status: 🔄 Ready to Implement (pending D6 language decision)
 
 ---
 
