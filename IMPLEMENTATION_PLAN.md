@@ -760,7 +760,7 @@ This could improve semantic search relevance.
 | Question | Options | Decision |
 |----------|---------|----------|
 | **D5: Category List** | A) Predefined list (consistent) / B) LLM-inferred (flexible) | ✅ A - Predefined |
-| **D6: Language** | A) English / B) Spanish / C) Both (display preference) | ⬜ TBD |
+| **D6: Language** | A) English / B) Spanish / C) Both (display preference) | ✅ A - English |
 | **D7: Re-categorization** | A) Allow user corrections / B) Read-only | ✅ B - Read-only (MVP) |
 | **D8: Enhanced Embeddings** | A) Include category in embedding / B) Description only | ✅ A - Include category |
 
@@ -770,7 +770,7 @@ This could improve semantic search relevance.
 - [ ] `backend/db/schema.sql` - Add `original_category` column
 - [ ] `backend/db/migrations/002_add_original_category.sql` - Migration for existing data
 
-### Status: 🔄 Ready to Implement (pending D6 language decision)
+### Status: ✅ All Decisions Made - Ready to Implement
 
 ---
 
