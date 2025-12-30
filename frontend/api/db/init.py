@@ -10,24 +10,49 @@ from psycopg2.extras import RealDictCursor
 from contextlib import contextmanager
 
 # Database connection parameters
-_raw_url = os.getenv("DATABASE_URL", "postgresql://analyzer:analyzer_dev@localhost:5434/financial_analyzer")
-# URL-encode password if it contains special characters
 import urllib.parse
-if "@" in _raw_url and "://" in _raw_url:
-    # Parse the URL and re-encode the password
-    prefix, rest = _raw_url.split("://", 1)
-    if "@" in rest:
-        userinfo, hostinfo = rest.rsplit("@", 1)
-        if ":" in userinfo:
-            user, password = userinfo.split(":", 1)
-            password_encoded = urllib.parse.quote(password, safe="")
-            DATABASE_URL = f"{prefix}://{user}:{password_encoded}@{hostinfo}"
+
+def _get_db_params():
+    """Parse DATABASE_URL into connection parameters."""
+    raw_url = os.getenv("DATABASE_URL", "postgresql://analyzer:analyzer_dev@localhost:5434/financial_analyzer")
+
+    # Parse the URL
+    if raw_url.startswith("postgresql://") or raw_url.startswith("postgres://"):
+        # Remove scheme
+        url = raw_url.replace("postgresql://", "").replace("postgres://", "")
+
+        # Split user:pass@host:port/database
+        if "@" in url:
+            userinfo, hostinfo = url.rsplit("@", 1)
+            if ":" in userinfo:
+                user, password = userinfo.split(":", 1)
+            else:
+                user, password = userinfo, None
         else:
-            DATABASE_URL = _raw_url
+            user, password = None, None
+            hostinfo = url
+
+        # Split host:port/database
+        if "/" in hostinfo:
+            hostport, database = hostinfo.split("/", 1)
+        else:
+            hostport, database = hostinfo, "postgres"
+
+        if ":" in hostport:
+            host, port = hostport.split(":", 1)
+        else:
+            host, port = hostport, "5432"
+
+        return {
+            "host": host,
+            "port": int(port),
+            "database": database,
+            "user": user,
+            "password": password
+        }
     else:
-        DATABASE_URL = _raw_url
-else:
-    DATABASE_URL = _raw_url
+        # Return raw URL for local/default case
+        return {"dsn": raw_url}
 
 
 @contextmanager
@@ -40,7 +65,11 @@ def get_connection():
             with conn.cursor() as cur:
                 cur.execute("SELECT * FROM transactions")
     """
-    conn = psycopg2.connect(DATABASE_URL)
+    params = _get_db_params()
+    if "dsn" in params:
+        conn = psycopg2.connect(params["dsn"])
+    else:
+        conn = psycopg2.connect(**params)
     try:
         yield conn
     finally:
