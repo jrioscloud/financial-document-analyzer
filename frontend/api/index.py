@@ -3,10 +3,12 @@ Financial Document Analyzer - Vercel Serverless API
 RAG-powered chatbot for analyzing financial documents
 """
 
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
+from typing import Optional
 import os
 import sys
+import httpx
 from pathlib import Path
 
 # Add the api directory to Python path for local imports
@@ -26,6 +28,38 @@ from db.init import init_db, store_transactions
 # Global agent instance (used when no file context)
 _agent = None
 _db_initialized = False
+
+
+async def verify_auth(authorization: Optional[str] = Header(None)):
+    """
+    Verify Supabase JWT token from Authorization header.
+    Protects API endpoints from unauthorized access.
+    """
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Missing authorization header")
+
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid authorization format")
+
+    token = authorization.replace("Bearer ", "")
+
+    # Verify token with Supabase
+    supabase_url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+    if not supabase_url:
+        raise HTTPException(status_code=500, detail="Supabase not configured")
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{supabase_url}/auth/v1/user",
+                headers={"Authorization": f"Bearer {token}",
+                         "apikey": os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "")}
+            )
+            if response.status_code != 200:
+                raise HTTPException(status_code=401, detail="Invalid or expired token")
+            return response.json()
+    except httpx.RequestError:
+        raise HTTPException(status_code=401, detail="Failed to verify token")
 
 
 def get_agent(file_context: str = ""):
@@ -78,9 +112,9 @@ async def health_check():
 
 
 @app.post("/api/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest):
+async def chat(request: ChatRequest, user: dict = Depends(verify_auth)):
     """
-    Main chat endpoint.
+    Main chat endpoint (requires authentication).
     Process user message through LangChain agent with financial analysis tools.
     """
     ensure_db()
@@ -115,7 +149,11 @@ async def chat(request: ChatRequest):
 
 
 @app.post("/api/upload", response_model=UploadResponse)
-async def upload_file(file: UploadFile = File(...), session_id: str = None):
+async def upload_file(
+    file: UploadFile = File(...),
+    session_id: str = None,
+    user: dict = Depends(verify_auth)
+):
     """
     Upload CSV file with transactions.
     Process: Parse → Embed → Store in PostgreSQL with pgvector

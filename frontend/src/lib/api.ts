@@ -2,9 +2,27 @@
  * Financial Document Analyzer - API Client
  */
 
+import { createClient } from "@/lib/supabase/client";
+
 // In production, use relative paths (same origin) for Vercel serverless API
 // In development, use NEXT_PUBLIC_API_URL to point to the separate FastAPI server
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+
+/**
+ * Get auth headers with Supabase JWT token
+ */
+async function getAuthHeaders(): Promise<HeadersInit> {
+  const supabase = createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session?.access_token) {
+    throw new Error("Not authenticated");
+  }
+
+  return {
+    "Authorization": `Bearer ${session.access_token}`,
+  };
+}
 
 export interface ChatMessage {
   role: "user" | "assistant" | "system";
@@ -38,10 +56,13 @@ export async function sendMessage(
   message: string,
   sessionId?: string
 ): Promise<ChatResponse> {
+  const authHeaders = await getAuthHeaders();
+
   const response = await fetch(`${API_BASE}/api/chat`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...authHeaders,
     },
     body: JSON.stringify({
       message,
@@ -61,11 +82,14 @@ export async function sendMessage(
  * Upload a CSV file
  */
 export async function uploadFile(file: File): Promise<UploadResponse> {
+  const authHeaders = await getAuthHeaders();
+
   const formData = new FormData();
   formData.append("file", file);
 
   const response = await fetch(`${API_BASE}/api/upload`, {
     method: "POST",
+    headers: authHeaders,
     body: formData,
   });
 
