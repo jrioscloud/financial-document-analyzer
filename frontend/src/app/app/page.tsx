@@ -124,8 +124,8 @@ export default function AppPage() {
 
   // Handle upload click from empty state
   const handleUploadClick = () => {
-    // Trigger the file input in the FileUpload component
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    // Trigger the file input in the FileUpload component using its ID
+    const fileInput = document.getElementById('file-upload') as HTMLInputElement;
     if (fileInput) {
       fileInput.click();
     }
