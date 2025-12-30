@@ -61,9 +61,20 @@ def init_db():
     """
     Initialize database with schema.
 
-    Runs the schema.sql file to create tables and indexes.
-    Safe to run multiple times (uses IF NOT EXISTS).
+    In serverless (Vercel), the schema is already set up in Supabase.
+    This function just validates the connection and skips schema execution
+    if the tables already exist.
     """
+    # First, check if tables already exist (Supabase production case)
+    try:
+        with get_cursor(dict_cursor=False) as cur:
+            cur.execute("SELECT 1 FROM transactions LIMIT 1")
+            print("Database already initialized - tables exist.")
+            return
+    except Exception:
+        # Tables don't exist, need to run schema
+        pass
+
     schema_path = Path(__file__).parent / "schema.sql"
 
     if not schema_path.exists():
