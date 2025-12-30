@@ -339,7 +339,7 @@ def generate_report(date_from: str, date_to: str) -> str:
 - [x] Install `@supabase/supabase-js` in frontend
 - [x] Create login page (`/login`)
 - [x] Add auth middleware to protect `/app` route
-- [ ] Protect API endpoints with session validation *(deferred - frontend auth sufficient for MVP)*
+- [x] Protect API endpoints with JWT validation ✅ (2025-12-30)
 - [x] Add logout functionality
 
 **Auth Flow:**
@@ -378,6 +378,12 @@ JWT session created → Redirect to /app → Access granted
 - `frontend/api/db/` - Database module
 - `frontend/api/utils/` - CSV parser and embeddings
 - `frontend/vercel.json` - Vercel configuration
+
+**Security (2025-12-30):**
+- `/api/chat` and `/api/upload` require valid Supabase JWT token
+- `verify_auth` dependency validates token with Supabase Auth API
+- Frontend sends `Authorization: Bearer <token>` header on all authenticated requests
+- Prevents unauthorized access to OpenAI-powered endpoints
 
 **Status:** ✅ COMPLETE (2025-12-30)
 
@@ -627,7 +633,7 @@ curl -X POST http://localhost:8000/api/chat \
 | 4. FastAPI Backend | ✅ Complete | 2025-12-29 | 2025-12-29 |
 | 5. Next.js Frontend | ✅ Complete | 2025-12-29 | 2025-12-29 |
 | 6. Integration Testing | ✅ Complete | 2025-12-29 | 2025-12-29 |
-| 7. Deployment | 🔄 In Progress | 2025-12-29 | |
+| 7. Deployment | ✅ Complete | 2025-12-29 | 2025-12-30 |
 | 8. Ingestion Pipeline | ⬜ Not Started | | |
 | **8.5 Landing Page & Routing** | ✅ Complete | 2025-12-29 | 2025-12-29 |
 | 9. Portfolio Deliverables | ⬜ Not Started | | |
