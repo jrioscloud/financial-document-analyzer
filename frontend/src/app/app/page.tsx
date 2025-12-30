@@ -6,7 +6,7 @@ import { ChatWidget } from "@/components/ChatWidget";
 import { ChatInput } from "@/components/ChatInput";
 import { FileUpload } from "@/components/FileUpload";
 import { BrandIcon } from "@/components/BrandIcon";
-import { sendMessage, getHistory, type ChatMessage, type UploadResponse } from "@/lib/api";
+import { sendMessage, getHistory, getStats, type ChatMessage, type UploadResponse, type StatsResponse } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
@@ -21,17 +21,29 @@ export default function AppPage() {
   const [error, setError] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [hasData, setHasData] = useState(false);
+  const [stats, setStats] = useState<StatsResponse | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const supabase = createClient();
 
-  // Load hasData from localStorage on mount
-  useEffect(() => {
-    const storedHasData = localStorage.getItem(HAS_DATA_KEY);
-    if (storedHasData === "true") {
-      setHasData(true);
+  // Fetch stats on mount and after upload
+  const fetchStats = useCallback(async () => {
+    try {
+      const data = await getStats();
+      setStats(data);
+      if (data.has_data) {
+        setHasData(true);
+        localStorage.setItem(HAS_DATA_KEY, "true");
+      }
+    } catch (err) {
+      console.error("Failed to fetch stats:", err);
     }
   }, []);
+
+  // Load stats on mount
+  useEffect(() => {
+    fetchStats();
+  }, [fetchStats]);
 
   // Get current user on mount
   useEffect(() => {
@@ -113,6 +125,9 @@ export default function AppPage() {
     // Mark that we have data
     setHasData(true);
     localStorage.setItem(HAS_DATA_KEY, "true");
+
+    // Refresh stats to show updated data
+    fetchStats();
 
     // Add a system-like message about the upload
     const uploadMessage: ChatMessage = {
@@ -197,14 +212,53 @@ export default function AppPage() {
           />
         </div>
 
-        {/* Data Status Indicator */}
-        {hasData && (
+        {/* Data Stats Panel */}
+        {stats?.has_data && (
           <div className="px-4 pb-4 animate-fade-in">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-500/10 border border-brand-500/20">
-              <svg className="w-4 h-4 text-brand-400 animate-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-xs text-brand-400">Data loaded</span>
+            <div className="rounded-lg bg-brand-500/10 border border-brand-500/20 p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <svg className="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <span className="text-xs font-medium text-brand-400">Available Data</span>
+              </div>
+              <div className="space-y-1.5 text-xs text-muted-foreground">
+                <div className="flex justify-between">
+                  <span>Transactions:</span>
+                  <span className="text-foreground font-medium">{stats.total_transactions.toLocaleString()}</span>
+                </div>
+                {stats.date_range && (
+                  <div className="flex justify-between">
+                    <span>Date Range:</span>
+                    <span className="text-foreground font-medium">
+                      {new Date(stats.date_range.start).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                      {' - '}
+                      {new Date(stats.date_range.end).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                    </span>
+                  </div>
+                )}
+                {stats.sources.length > 0 && (
+                  <div className="flex justify-between">
+                    <span>Sources:</span>
+                    <span className="text-foreground font-medium">{stats.sources.map(s => s.name).join(', ')}</span>
+                  </div>
+                )}
+              </div>
+              {stats.categories.length > 0 && (
+                <div className="mt-2 pt-2 border-t border-brand-500/20">
+                  <span className="text-[10px] text-muted-foreground">Top Categories:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {stats.categories.slice(0, 4).map((cat) => (
+                      <span
+                        key={cat.name}
+                        className="px-1.5 py-0.5 text-[10px] rounded bg-secondary/50 text-muted-foreground"
+                      >
+                        {cat.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

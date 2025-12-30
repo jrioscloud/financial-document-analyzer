@@ -68,6 +68,24 @@ export interface HealthResponse {
   environment: string;
 }
 
+export interface StatsResponse {
+  total_transactions: number;
+  date_range: {
+    start: string;
+    end: string;
+  } | null;
+  categories: { name: string; count: number }[];
+  sources: { name: string; count: number }[];
+  recent_transactions?: {
+    date: string;
+    description: string;
+    amount: number;
+    currency: string;
+    category: string;
+  }[];
+  has_data: boolean;
+}
+
 /**
  * Send a message to the chat API
  */
@@ -144,6 +162,24 @@ export async function checkHealth(): Promise<HealthResponse> {
 
   if (!response.ok) {
     throw new Error("API is not healthy");
+  }
+
+  return response.json();
+}
+
+/**
+ * Get statistics about available data
+ */
+export async function getStats(): Promise<StatsResponse> {
+  const authHeaders = await getAuthHeaders();
+
+  const response = await fetch(`${API_BASE}/api/stats`, {
+    headers: authHeaders,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail || "Failed to get stats");
   }
 
   return response.json();

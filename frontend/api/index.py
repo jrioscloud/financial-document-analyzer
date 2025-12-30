@@ -268,4 +268,80 @@ async def get_history(session_id: str):
         raise HTTPException(status_code=500, detail=f"Error getting history: {str(e)}")
 
 
+@app.get("/api/stats")
+async def get_stats(user: dict = Depends(verify_auth)):
+    """
+    Get statistics about available transaction data.
+    Returns counts, date ranges, categories, and source banks.
+    """
+    from db.init import get_cursor
+
+    try:
+        with get_cursor() as cur:
+            # Total count
+            cur.execute("SELECT COUNT(*) as count FROM transactions")
+            total = cur.fetchone()["count"]
+
+            if total == 0:
+                return {
+                    "total_transactions": 0,
+                    "date_range": None,
+                    "categories": [],
+                    "sources": [],
+                    "has_data": False
+                }
+
+            # Date range
+            cur.execute("""
+                SELECT
+                    MIN(date) as min_date,
+                    MAX(date) as max_date
+                FROM transactions
+            """)
+            date_row = cur.fetchone()
+
+            # Categories with counts
+            cur.execute("""
+                SELECT category, COUNT(*) as count
+                FROM transactions
+                WHERE category IS NOT NULL
+                GROUP BY category
+                ORDER BY count DESC
+                LIMIT 10
+            """)
+            categories = [{"name": row["category"], "count": row["count"]} for row in cur.fetchall()]
+
+            # Source banks with counts
+            cur.execute("""
+                SELECT source_bank, COUNT(*) as count
+                FROM transactions
+                GROUP BY source_bank
+                ORDER BY count DESC
+            """)
+            sources = [{"name": row["source_bank"], "count": row["count"]} for row in cur.fetchall()]
+
+            # Recent transactions preview
+            cur.execute("""
+                SELECT date, description, amount, currency, category
+                FROM transactions
+                ORDER BY date DESC
+                LIMIT 5
+            """)
+            recent = [dict(row) for row in cur.fetchall()]
+
+            return {
+                "total_transactions": total,
+                "date_range": {
+                    "start": date_row["min_date"].isoformat() if date_row["min_date"] else None,
+                    "end": date_row["max_date"].isoformat() if date_row["max_date"] else None
+                },
+                "categories": categories,
+                "sources": sources,
+                "recent_transactions": recent,
+                "has_data": True
+            }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting stats: {str(e)}")
+
+
 # Vercel detects FastAPI apps automatically via the `app` variable
