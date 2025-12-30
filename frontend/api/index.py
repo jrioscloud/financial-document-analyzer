@@ -112,8 +112,7 @@ async def health_check():
 
 
 @app.post("/api/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest):
-    # TODO: Re-enable auth after debugging: user: dict = Depends(verify_auth)
+async def chat(request: ChatRequest, user: dict = Depends(verify_auth)):
     """
     Main chat endpoint (requires authentication).
     Process user message through LangChain agent with financial analysis tools.
