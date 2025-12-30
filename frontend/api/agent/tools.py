@@ -23,10 +23,11 @@ from openai import OpenAI
 # =============================================================================
 
 def get_db_connection():
-    """Get database connection."""
-    return psycopg2.connect(
-        os.getenv("DATABASE_URL", "postgresql://analyzer:analyzer_dev@localhost:5434/financial_analyzer")
-    )
+    """Get database connection using shared helper."""
+    from db.init import get_connection
+    # Use context manager but return the connection
+    conn = get_connection().__enter__()
+    return conn
 
 
 def get_embedding(text: str) -> list:
