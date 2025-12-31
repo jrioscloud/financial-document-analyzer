@@ -645,6 +645,41 @@ Added visual indicator in sidebar when data has been loaded:
 
 ---
 
+## Phase 8.7: Data Visibility
+**Executor:** Claude Code | **Time:** 1 hour
+**Status:** ✅ COMPLETE (2025-12-30)
+
+### 8.7.1 Backend Enhancements
+- [x] Add `/api/transactions` endpoint with pagination and filtering
+  - Supports: `page`, `limit`, `search`, `category`, `source`, `date_from`, `date_to`
+- [x] Update `/api/stats` to include file list with transaction counts
+
+### 8.7.2 Frontend Features
+- [x] **Collapsible File List** in sidebar
+  - Shows uploaded filenames
+  - Transaction count per file
+  - Source bank indicator
+  - Expand/collapse toggle
+
+- [x] **Transaction Browser Modal** (`TransactionBrowser.tsx`)
+  - Searchable by description
+  - Filterable by category and source
+  - Paginated results (25 per page)
+  - Formatted amounts and dates
+  - Category badges
+
+- [x] **"View All →" Button** to open browser from stats panel
+
+### 8.7.3 API Types Added
+```typescript
+interface FileInfo { filename, count, date_range, source }
+interface Transaction { id, date, description, amount, currency, category, ... }
+interface TransactionsResponse { transactions, total, page, limit, total_pages }
+interface TransactionFilters { search?, category?, source?, date_from?, date_to? }
+```
+
+---
+
 ## Phase 9: Portfolio Deliverables
 **Executor:** Manual + Claude Code | **Time:** 2 hours
 
@@ -738,6 +773,7 @@ curl -X POST http://localhost:8000/api/chat \
 | 8. Ingestion Pipeline | ✅ Complete | 2025-12-30 | 2025-12-30 |
 | **8.5 Landing Page & Routing** | ✅ Complete | 2025-12-29 | 2025-12-29 |
 | **8.6 UI/UX Enhancements** | ✅ Complete | 2025-12-30 | 2025-12-30 |
+| **8.7 Data Visibility** | ✅ Complete | 2025-12-30 | 2025-12-30 |
 | 9. Portfolio Deliverables | ⬜ Not Started | | |
 
 ---
