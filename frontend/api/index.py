@@ -270,7 +270,7 @@ async def get_history(session_id: str):
 async def get_stats(user: dict = Depends(verify_auth)):
     """
     Get statistics about available transaction data.
-    Returns counts, date ranges, categories, and source banks.
+    Returns counts, date ranges, categories, source banks, and file list.
     """
     from db.init import get_cursor
 
@@ -286,6 +286,7 @@ async def get_stats(user: dict = Depends(verify_auth)):
                     "date_range": None,
                     "categories": [],
                     "sources": [],
+                    "files": [],
                     "has_data": False
                 }
 
@@ -318,6 +319,29 @@ async def get_stats(user: dict = Depends(verify_auth)):
             """)
             sources = [{"name": row["source_bank"], "count": row["count"]} for row in cur.fetchall()]
 
+            # Files with counts and date ranges
+            cur.execute("""
+                SELECT
+                    source_file,
+                    COUNT(*) as count,
+                    MIN(date) as min_date,
+                    MAX(date) as max_date,
+                    source_bank
+                FROM transactions
+                WHERE source_file IS NOT NULL
+                GROUP BY source_file, source_bank
+                ORDER BY max_date DESC
+            """)
+            files = [{
+                "filename": row["source_file"],
+                "count": row["count"],
+                "date_range": {
+                    "start": row["min_date"].isoformat() if row["min_date"] else None,
+                    "end": row["max_date"].isoformat() if row["max_date"] else None
+                },
+                "source": row["source_bank"]
+            } for row in cur.fetchall()]
+
             # Recent transactions preview
             cur.execute("""
                 SELECT date, description, amount, currency, category
@@ -335,11 +359,97 @@ async def get_stats(user: dict = Depends(verify_auth)):
                 },
                 "categories": categories,
                 "sources": sources,
+                "files": files,
                 "recent_transactions": recent,
                 "has_data": True
             }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting stats: {str(e)}")
+
+
+@app.get("/api/transactions")
+async def get_transactions(
+    user: dict = Depends(verify_auth),
+    page: int = 1,
+    limit: int = 50,
+    search: Optional[str] = None,
+    category: Optional[str] = None,
+    source: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None
+):
+    """
+    Get paginated list of transactions with optional filtering.
+    """
+    from db.init import get_cursor
+
+    try:
+        with get_cursor() as cur:
+            # Build WHERE clause
+            conditions = []
+            params = []
+
+            if search:
+                conditions.append("description ILIKE %s")
+                params.append(f"%{search}%")
+
+            if category:
+                conditions.append("category = %s")
+                params.append(category)
+
+            if source:
+                conditions.append("source_bank = %s")
+                params.append(source)
+
+            if date_from:
+                conditions.append("date >= %s")
+                params.append(date_from)
+
+            if date_to:
+                conditions.append("date <= %s")
+                params.append(date_to)
+
+            where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
+
+            # Get total count for pagination
+            count_query = f"SELECT COUNT(*) as count FROM transactions {where_clause}"
+            cur.execute(count_query, params)
+            total = cur.fetchone()["count"]
+
+            # Get paginated transactions
+            offset = (page - 1) * limit
+            query = f"""
+                SELECT id, date, description, amount, amount_original, currency,
+                       category, type, source_bank, source_file
+                FROM transactions
+                {where_clause}
+                ORDER BY date DESC, id DESC
+                LIMIT %s OFFSET %s
+            """
+            cur.execute(query, params + [limit, offset])
+
+            transactions = []
+            for row in cur.fetchall():
+                tx = dict(row)
+                # Convert date to string
+                if tx.get("date"):
+                    tx["date"] = tx["date"].isoformat()
+                # Convert Decimal to float for JSON
+                if tx.get("amount"):
+                    tx["amount"] = float(tx["amount"])
+                if tx.get("amount_original"):
+                    tx["amount_original"] = float(tx["amount_original"])
+                transactions.append(tx)
+
+            return {
+                "transactions": transactions,
+                "total": total,
+                "page": page,
+                "limit": limit,
+                "total_pages": (total + limit - 1) // limit
+            }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting transactions: {str(e)}")
 
 
 # Vercel detects FastAPI apps automatically via the `app` variable

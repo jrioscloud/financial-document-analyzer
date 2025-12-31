@@ -68,6 +68,16 @@ export interface HealthResponse {
   environment: string;
 }
 
+export interface FileInfo {
+  filename: string;
+  count: number;
+  date_range: {
+    start: string;
+    end: string;
+  };
+  source: string;
+}
+
 export interface StatsResponse {
   total_transactions: number;
   date_range: {
@@ -76,6 +86,7 @@ export interface StatsResponse {
   } | null;
   categories: { name: string; count: number }[];
   sources: { name: string; count: number }[];
+  files: FileInfo[];
   recent_transactions?: {
     date: string;
     description: string;
@@ -84,6 +95,35 @@ export interface StatsResponse {
     category: string;
   }[];
   has_data: boolean;
+}
+
+export interface Transaction {
+  id: number;
+  date: string;
+  description: string;
+  amount: number;
+  amount_original?: number;
+  currency: string;
+  category?: string;
+  type: string;
+  source_bank: string;
+  source_file?: string;
+}
+
+export interface TransactionsResponse {
+  transactions: Transaction[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+}
+
+export interface TransactionFilters {
+  search?: string;
+  category?: string;
+  source?: string;
+  date_from?: string;
+  date_to?: string;
 }
 
 /**
@@ -180,6 +220,38 @@ export async function getStats(): Promise<StatsResponse> {
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
     throw new Error(error.detail || "Failed to get stats");
+  }
+
+  return response.json();
+}
+
+/**
+ * Get paginated list of transactions with optional filtering
+ */
+export async function getTransactions(
+  page: number = 1,
+  limit: number = 50,
+  filters: TransactionFilters = {}
+): Promise<TransactionsResponse> {
+  const authHeaders = await getAuthHeaders();
+
+  const params = new URLSearchParams();
+  params.set("page", page.toString());
+  params.set("limit", limit.toString());
+
+  if (filters.search) params.set("search", filters.search);
+  if (filters.category) params.set("category", filters.category);
+  if (filters.source) params.set("source", filters.source);
+  if (filters.date_from) params.set("date_from", filters.date_from);
+  if (filters.date_to) params.set("date_to", filters.date_to);
+
+  const response = await fetch(`${API_BASE}/api/transactions?${params}`, {
+    headers: authHeaders,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail || "Failed to get transactions");
   }
 
   return response.json();
