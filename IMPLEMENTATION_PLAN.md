@@ -638,7 +638,7 @@ Added visual indicator in sidebar when data has been loaded:
 |-----------|-------------------|
 | Landing Page Nav | `nav-link` underline animation |
 | Landing Page Features | `stagger-1` through `stagger-6` on cards |
-| Landing Page Demo | `gradient-border-animated` |
+| Landing Page Demo | `gradient-border-animated` |z
 | Chat Empty State | `animate-fade-in`, `interactive-lift` on buttons |
 | Data Status | `animate-fade-in`, `animate-check` on icon |
 | Error Banner | `animate-slide-up` |
@@ -683,24 +683,51 @@ interface TransactionFilters { search?, category?, source?, date_from?, date_to?
 
 ## Phase 9: Portfolio Deliverables
 **Executor:** Manual + Claude Code | **Time:** 2 hours
+**Status:** ⬜ Not Started
 
-### 9.1 Documentation
+**Reference:** See `PORTFOLIO_ITEMS.md` for detailed case study format and content for each feature.
+
+### 9.1 Portfolio Case Studies (6 Items)
+Each item follows AWS case study format. Full details in `PORTFOLIO_ITEMS.md`.
+
+| # | Portfolio Item | PDF | Video |
+|---|----------------|-----|-------|
+| 1 | RAG Semantic Search | [ ] `01_RAG_Semantic_Search_Case_Study.pdf` | [ ] 2-min |
+| 2 | LangChain 5-Tool Agent | [ ] `02_LangChain_Agent_Case_Study.pdf` | [ ] 3-min |
+| 3 | Multi-Source Data Pipeline | [ ] `03_Multi_Source_Pipeline_Case_Study.pdf` | [ ] 2-min |
+| 4 | Production Auth & Security | [ ] `04_Production_Security_Case_Study.pdf` | [ ] 2-min |
+| 5 | Conversational Memory | [ ] `05_Conversational_Memory_Case_Study.pdf` | [ ] 2-min |
+| 6 | Next.js Chat Interface | [ ] `06_Chat_Interface_Case_Study.pdf` | [ ] 2-min |
+
+**PDF Location:** `docs/case_studies/`
+**Video Location:** YouTube (unlisted) or Loom
+
+### 9.2 Documentation
 - [ ] Polish README.md with:
-  - Screenshots
+  - Screenshots (4 minimum)
   - Architecture diagram
   - Setup instructions
   - Demo queries
 - [ ] Add LICENSE (MIT)
 
-### 9.2 Architecture Diagram
+### 9.3 Architecture Diagram
 - [ ] Create diagram showing:
   - User → Next.js → FastAPI → PostgreSQL
   - LangChain agent + tools
-  - S3 → Lambda ingestion (if applicable)
+  - pgvector semantic search flow
 - [ ] Export as PNG for Upwork portfolio
+- [ ] Export as SVG for README
 
-### 9.3 Video Walkthrough
-- [ ] Record 3-5 minute demo:
+### 9.4 Screenshots
+- [ ] Landing page (full page)
+- [ ] Chat with tool badge visible
+- [ ] Report/table output
+- [ ] Transaction browser
+
+**Location:** `docs/screenshots/`
+
+### 9.5 Video Walkthrough
+- [ ] Record 5-min combined demo:
   - Show UI
   - Upload a file
   - Ask questions
@@ -776,6 +803,493 @@ curl -X POST http://localhost:8000/api/chat \
 | **8.6 UI/UX Enhancements** | ✅ Complete | 2025-12-30 | 2025-12-30 |
 | **8.7 Data Visibility** | ✅ Complete | 2025-12-30 | 2025-12-30 |
 | 9. Portfolio Deliverables | ⬜ Not Started | | |
+| **10.1 PDF Processing** | ⬜ Not Started | | |
+| **10.2 n8n Webhook** | ⬜ Not Started | | |
+| **10.3 Spending Charts** | ⬜ Not Started | | |
+| **10.4 Voice Input** | ⬜ Not Started | | |
+| **10.5 LinkedIn OAuth** | ⬜ Not Started | | |
+
+---
+
+## Phase 10: Market-Aligned Enhancements
+
+**Source:** Capturely Q4 2025 job analysis (9,000+ notifications)
+**Rationale:** High-demand features that differentiate portfolio and match market needs
+
+### 10.1 PDF Processing
+**Executor:** Claude Code | **Time:** 4 hours
+**Status:** ⬜ Not Started
+**Market Signal:** 19 document AI jobs, "PDF" mentioned in 21+ RAG job descriptions
+
+#### Why This Matters
+- Most RAG jobs mention document processing
+- CSV-only limits portfolio appeal
+- PDF is the universal business document format
+
+#### Implementation
+
+**Step 1: Add Dependencies**
+```bash
+# backend/requirements.txt
+pdfplumber>=0.11.0
+PyPDF2>=3.0.0  # Fallback for encrypted PDFs
+```
+
+**Step 2: Create PDF Parser**
+```python
+# backend/utils/pdf_parser.py
+import pdfplumber
+
+def parse_pdf(file_path: str) -> list[dict]:
+    """Extract text from PDF, chunk into paragraphs."""
+    chunks = []
+    with pdfplumber.open(file_path) as pdf:
+        for page_num, page in enumerate(pdf.pages):
+            text = page.extract_text()
+            if text:
+                # Chunk by paragraphs or fixed size
+                paragraphs = text.split('\n\n')
+                for i, para in enumerate(paragraphs):
+                    if len(para.strip()) > 50:  # Skip tiny fragments
+                        chunks.append({
+                            'content': para.strip(),
+                            'source': f'page_{page_num + 1}_chunk_{i}',
+                            'page': page_num + 1
+                        })
+    return chunks
+```
+
+**Step 3: Update Upload Endpoint**
+```python
+@app.post("/api/upload")
+async def upload_file(file: UploadFile):
+    if file.filename.endswith('.pdf'):
+        chunks = parse_pdf(file)
+        # Generate embeddings for each chunk
+        # Store in documents table (new)
+    elif file.filename.endswith('.csv'):
+        # Existing CSV logic
+```
+
+**Step 4: Add Documents Table**
+```sql
+CREATE TABLE documents (
+    id SERIAL PRIMARY KEY,
+    filename TEXT NOT NULL,
+    content TEXT NOT NULL,
+    source TEXT,  -- page_1_chunk_0
+    page INTEGER,
+    embedding vector(1536),
+    session_id TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX ON documents USING ivfflat (embedding vector_cosine_ops);
+```
+
+**Step 5: Update RAG Retrieval**
+- Search both `transactions` and `documents` tables
+- Combine results by similarity score
+
+#### Files to Create/Modify
+- [ ] `backend/utils/pdf_parser.py` - New: PDF text extraction
+- [ ] `backend/api/index.py` - Update upload endpoint
+- [ ] `backend/db/schema.sql` - Add documents table
+- [ ] `frontend/src/components/FileUpload.tsx` - Accept .pdf files
+
+#### Test Cases
+- [ ] Upload single-page PDF
+- [ ] Upload multi-page PDF
+- [ ] Query: "What does the document say about X?"
+- [ ] Mixed query: CSV transactions + PDF context
+
+---
+
+### 10.2 n8n Webhook Endpoint
+**Executor:** Claude Code | **Time:** 2 hours
+**Status:** ⬜ Not Started
+**Market Signal:** 274 n8n jobs in Capturely - MASSIVE demand
+
+#### Why This Matters
+- n8n is the fastest-growing automation platform
+- Shows integration capability
+- Differentiator: "n8n-compatible" in portfolio
+
+#### Implementation
+
+**Step 1: Create Webhook Endpoint**
+```python
+# backend/api/webhook.py
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from typing import Optional, List
+
+router = APIRouter()
+
+class WebhookPayload(BaseModel):
+    transactions: Optional[List[dict]] = None
+    query: Optional[str] = None
+    session_id: Optional[str] = None
+    action: str  # "ingest" | "query" | "report"
+
+@router.post("/api/webhook")
+async def webhook(payload: WebhookPayload):
+    """
+    n8n-compatible webhook for automated workflows.
+
+    Actions:
+    - ingest: Add transactions from external source
+    - query: Ask a question, get AI response
+    - report: Generate spending report for date range
+    """
+    if payload.action == "ingest":
+        # Parse and store transactions
+        count = await ingest_transactions(payload.transactions)
+        return {"status": "success", "count": count}
+
+    elif payload.action == "query":
+        # Run through agent
+        response = await agent_query(payload.query, payload.session_id)
+        return {"status": "success", "response": response}
+
+    elif payload.action == "report":
+        # Generate report
+        report = await generate_report(payload.session_id)
+        return {"status": "success", "report": report}
+
+    raise HTTPException(400, f"Unknown action: {payload.action}")
+```
+
+**Step 2: Add API Key Auth (Optional)**
+```python
+# Simple API key for webhook security
+API_KEY = os.getenv("WEBHOOK_API_KEY")
+
+@router.post("/api/webhook")
+async def webhook(
+    payload: WebhookPayload,
+    x_api_key: str = Header(None)
+):
+    if API_KEY and x_api_key != API_KEY:
+        raise HTTPException(401, "Invalid API key")
+    # ... rest of handler
+```
+
+**Step 3: Document n8n Integration**
+Create `docs/n8n_integration.md` with:
+- Webhook URL format
+- Payload examples for each action
+- n8n node configuration screenshots
+
+#### Files to Create/Modify
+- [ ] `backend/api/webhook.py` - New: Webhook handler
+- [ ] `backend/api/index.py` - Register webhook router
+- [ ] `docs/n8n_integration.md` - New: Integration guide
+- [ ] `.env.example` - Add WEBHOOK_API_KEY
+
+#### Portfolio Value
+Add to portfolio description:
+> "n8n-compatible webhook endpoint for automated data ingestion and AI queries"
+
+---
+
+### 10.3 Spending Charts (Recharts)
+**Executor:** Claude Code | **Time:** 3 hours
+**Status:** ⬜ Not Started
+**Market Signal:** Visual demos convert better, "dashboard" mentioned in 5+ jobs
+
+#### Why This Matters
+- Text-only responses are boring in demos
+- Charts show data visualization capability
+- Recharts is the React standard
+
+#### Implementation
+
+**Step 1: Add Recharts**
+```bash
+cd frontend && npm install recharts
+```
+
+**Step 2: Create Chart Component**
+```tsx
+// frontend/src/components/SpendingChart.tsx
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+
+interface ChartData {
+  chart_type: 'pie' | 'bar';
+  title: string;
+  data: Array<{ name: string; value: number }>;
+}
+
+export function SpendingChart({ chartData }: { chartData: ChartData }) {
+  const COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+
+  if (chartData.chart_type === 'pie') {
+    return (
+      <div className="p-4">
+        <h3 className="text-lg font-semibold mb-4">{chartData.title}</h3>
+        <PieChart width={400} height={300}>
+          <Pie data={chartData.data} dataKey="value" nameKey="name" cx="50%" cy="50%">
+            {chartData.data.map((_, index) => (
+              <Cell key={index} fill={COLORS[index % COLORS.length]} />
+            ))}
+          </Pie>
+          <Tooltip />
+          <Legend />
+        </PieChart>
+      </div>
+    );
+  }
+
+  // Bar chart for comparisons
+  return (
+    <BarChart width={500} height={300} data={chartData.data}>
+      <XAxis dataKey="name" />
+      <YAxis />
+      <Tooltip />
+      <Bar dataKey="value" fill="#22c55e" />
+    </BarChart>
+  );
+}
+```
+
+**Step 3: Add generate_chart Tool**
+```python
+# backend/agent/tools.py
+@tool
+def generate_chart(
+    chart_type: str,
+    date_from: str = None,
+    date_to: str = None,
+    group_by: str = "category"
+) -> str:
+    """
+    Generate chart data for spending visualization.
+
+    Args:
+        chart_type: "pie" for category breakdown, "bar" for period comparison
+        date_from: Start date (YYYY-MM-DD)
+        date_to: End date (YYYY-MM-DD)
+        group_by: "category" or "month"
+
+    Returns:
+        JSON string with chart_type, title, and data array
+    """
+    # Query database for aggregated data
+    # Return JSON that frontend can render
+```
+
+**Step 4: Update ChatWidget to Render Charts**
+```tsx
+// In ChatWidget.tsx, check for chart data in response
+if (message.chartData) {
+  return <SpendingChart chartData={message.chartData} />;
+}
+```
+
+#### Files to Create/Modify
+- [ ] `frontend/src/components/SpendingChart.tsx` - New: Chart component
+- [ ] `backend/agent/tools.py` - Add generate_chart tool
+- [ ] `frontend/src/components/ChatWidget.tsx` - Render charts in messages
+- [ ] `backend/models.py` - Add ChartData model
+
+#### Test Cases
+- [ ] "Show me a pie chart of spending by category"
+- [ ] "Compare my spending month over month"
+- [ ] Chart renders correctly in chat
+
+---
+
+### 10.4 Voice Input (Whisper)
+**Executor:** Claude Code | **Time:** 4 hours
+**Status:** ⬜ Not Started
+**Market Signal:** 22 voice AI jobs, differentiator for demos
+
+#### Why This Matters
+- Voice input is impressive in demos
+- Shows multi-modal capability
+- OpenAI Whisper is easy to integrate
+
+#### Implementation
+
+**Step 1: Create Transcription Endpoint**
+```python
+# backend/api/transcribe.py
+from openai import OpenAI
+from fastapi import UploadFile
+
+client = OpenAI()
+
+@router.post("/api/transcribe")
+async def transcribe(audio: UploadFile):
+    """Transcribe audio to text using Whisper."""
+    transcript = client.audio.transcriptions.create(
+        model="whisper-1",
+        file=audio.file
+    )
+    return {"text": transcript.text}
+```
+
+**Step 2: Add Voice Button to Chat**
+```tsx
+// frontend/src/components/VoiceInput.tsx
+import { useState, useRef } from 'react';
+
+export function VoiceInput({ onTranscript }: { onTranscript: (text: string) => void }) {
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorder = useRef<MediaRecorder | null>(null);
+
+  const startRecording = async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder.current = new MediaRecorder(stream);
+    const chunks: Blob[] = [];
+
+    mediaRecorder.current.ondataavailable = (e) => chunks.push(e.data);
+    mediaRecorder.current.onstop = async () => {
+      const blob = new Blob(chunks, { type: 'audio/webm' });
+      const formData = new FormData();
+      formData.append('audio', blob);
+
+      const res = await fetch('/api/transcribe', { method: 'POST', body: formData });
+      const { text } = await res.json();
+      onTranscript(text);
+    };
+
+    mediaRecorder.current.start();
+    setIsRecording(true);
+  };
+
+  const stopRecording = () => {
+    mediaRecorder.current?.stop();
+    setIsRecording(false);
+  };
+
+  return (
+    <button onClick={isRecording ? stopRecording : startRecording}>
+      {isRecording ? '🔴 Stop' : '🎤 Voice'}
+    </button>
+  );
+}
+```
+
+#### Files to Create/Modify
+- [ ] `backend/api/transcribe.py` - New: Whisper endpoint
+- [ ] `frontend/src/components/VoiceInput.tsx` - New: Voice button
+- [ ] `frontend/src/components/ChatInput.tsx` - Integrate voice button
+
+#### Test Cases
+- [ ] Record audio, get transcription
+- [ ] Transcription flows into chat input
+- [ ] Full flow: Voice → Transcribe → Query → Response
+
+---
+
+### 10.5 LinkedIn OAuth (Supabase Provider)
+**Executor:** Claude Code | **Time:** 30 min
+**Status:** ⬜ Not Started
+**Purpose:** Add LinkedIn sign-in option to demonstrate OAuth/OIDC integration for portfolio
+
+#### Why This Matters
+- Demonstrates OAuth2/OIDC implementation
+- Shows multi-provider authentication capability
+- Reuses existing Supabase Auth infrastructure
+- Portfolio proof for LinkedIn-related consulting work
+
+#### Prerequisites
+- [ ] LinkedIn Developer App created at https://www.linkedin.com/developers/
+- [ ] Products enabled: "Sign In with LinkedIn using OpenID Connect"
+- [ ] Authorized redirect URI: `https://<project-ref>.supabase.co/auth/v1/callback`
+
+#### Implementation
+
+**Step 1: Configure Supabase Dashboard**
+1. Go to Supabase Dashboard → Authentication → Providers
+2. Find LinkedIn and toggle **Enable**
+3. Enter:
+   - **Client ID:** From LinkedIn Developer App
+   - **Client Secret:** From LinkedIn Developer App
+4. Copy the **Callback URL** shown
+5. Save changes
+
+**Step 2: Add Callback URL to LinkedIn**
+1. Go to LinkedIn Developer Portal → Your App → Auth tab
+2. Add Supabase callback URL to "Authorized redirect URLs for your app":
+   ```
+   https://<project-ref>.supabase.co/auth/v1/callback
+   ```
+3. Save
+
+**Step 3: Update Login Page**
+```tsx
+// frontend/src/app/login/page.tsx
+// Add LinkedIn sign-in button next to email/password form
+
+const handleLinkedInLogin = async () => {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'linkedin_oidc',
+    options: {
+      redirectTo: `${window.location.origin}/app`,
+      scopes: 'openid profile email'
+    }
+  })
+  if (error) {
+    setError(error.message)
+  }
+}
+
+// In JSX, add button:
+<button
+  onClick={handleLinkedInLogin}
+  className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-gray-600 rounded-lg hover:bg-gray-800 transition-colors"
+>
+  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+  </svg>
+  Sign in with LinkedIn
+</button>
+```
+
+**Step 4: Handle OAuth Callback (Already handled by Supabase)**
+Supabase middleware already handles the callback. User will be redirected to `/app` after successful LinkedIn auth.
+
+**Step 5: Display LinkedIn Profile Data**
+```tsx
+// In /app page, after auth:
+const { data: { user } } = await supabase.auth.getUser()
+
+// LinkedIn data available in:
+// user.user_metadata.full_name
+// user.user_metadata.avatar_url
+// user.user_metadata.email
+// user.user_metadata.provider_id (LinkedIn user ID)
+```
+
+#### Files to Modify
+| Action | File | Description |
+|--------|------|-------------|
+| MODIFY | `frontend/src/app/login/page.tsx` | Add LinkedIn OAuth button |
+| OPTIONAL | `frontend/src/app/app/page.tsx` | Display LinkedIn profile picture |
+
+#### Environment Variables
+No new env vars needed - Supabase handles LinkedIn credentials in dashboard.
+
+#### Test Cases
+- [ ] Click "Sign in with LinkedIn" → redirects to LinkedIn
+- [ ] Authorize on LinkedIn → redirects back to app
+- [ ] User is authenticated and can access `/app`
+- [ ] User metadata contains LinkedIn profile info
+
+#### LinkedIn OIDC Scopes Available
+| Scope | Data Returned |
+|-------|---------------|
+| `openid` | Required for OIDC |
+| `profile` | name, picture |
+| `email` | email address |
+
+**Note:** LinkedIn OIDC does NOT return `headline` (job title) by default. That requires additional API calls with the access token - a more advanced implementation.
+
+#### Portfolio Value
+> "Multi-provider authentication: Email/password + LinkedIn OAuth using Supabase Auth with OpenID Connect"
 
 ---
 
