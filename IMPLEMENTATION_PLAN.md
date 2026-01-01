@@ -1,8 +1,9 @@
 # Financial Document Analyzer - Implementation Plan
 
-**Timeline:** 5 days (by January 2nd, 2025)
-**Approach:** Local-first development → Deploy when ready
-**Cost Target:** < $5/month in production
+**Timeline:** 5 days (December 29, 2025 → January 2, 2026)
+**Status:** ✅ Core MVP COMPLETE + Deployed
+**Production:** https://finanalyzer-demo.vercel.app/
+**Cost:** $0/month (Supabase + Vercel free tiers)
 
 ---
 
@@ -807,7 +808,7 @@ curl -X POST http://localhost:8000/api/chat \
 | **10.2 n8n Webhook** | ⬜ Not Started | | |
 | **10.3 Spending Charts** | ⬜ Not Started | | |
 | **10.4 Voice Input** | ⬜ Not Started | | |
-| **10.5 LinkedIn OAuth** | ⬜ Not Started | | |
+| **10.5 LinkedIn OAuth** | ✅ Complete | 2025-01-01 | 2025-01-01 |
 
 ---
 
@@ -1186,7 +1187,7 @@ export function VoiceInput({ onTranscript }: { onTranscript: (text: string) => v
 
 ### 10.5 LinkedIn OAuth (Supabase Provider)
 **Executor:** Claude Code | **Time:** 30 min
-**Status:** ⬜ Not Started
+**Status:** ✅ Complete (2025-01-01)
 **Purpose:** Add LinkedIn sign-in option to demonstrate OAuth/OIDC integration for portfolio
 
 #### Why This Matters
@@ -1196,9 +1197,9 @@ export function VoiceInput({ onTranscript }: { onTranscript: (text: string) => v
 - Portfolio proof for LinkedIn-related consulting work
 
 #### Prerequisites
-- [ ] LinkedIn Developer App created at https://www.linkedin.com/developers/
-- [ ] Products enabled: "Sign In with LinkedIn using OpenID Connect"
-- [ ] Authorized redirect URI: `https://<project-ref>.supabase.co/auth/v1/callback`
+- [x] LinkedIn Developer App created at https://www.linkedin.com/developers/
+- [x] Products enabled: "Sign In with LinkedIn using OpenID Connect"
+- [x] Authorized redirect URI: `https://udutjcqqasibewbmkgej.supabase.co/auth/v1/callback`
 
 #### Implementation
 
@@ -1264,20 +1265,23 @@ const { data: { user } } = await supabase.auth.getUser()
 // user.user_metadata.provider_id (LinkedIn user ID)
 ```
 
-#### Files to Modify
+#### Files Modified
 | Action | File | Description |
 |--------|------|-------------|
-| MODIFY | `frontend/src/app/login/page.tsx` | Add LinkedIn OAuth button |
-| OPTIONAL | `frontend/src/app/app/page.tsx` | Display LinkedIn profile picture |
+| MODIFIED | `frontend/src/app/login/page.tsx` | Added LinkedIn OAuth button with OIDC flow |
 
 #### Environment Variables
 No new env vars needed - Supabase handles LinkedIn credentials in dashboard.
 
+#### Configuration Applied
+- LinkedIn Client ID: `78n9890iwl54bj`
+- Supabase Site URL: Updated from `localhost:3000` → `https://finanalyzer-demo.vercel.app`
+
 #### Test Cases
-- [ ] Click "Sign in with LinkedIn" → redirects to LinkedIn
-- [ ] Authorize on LinkedIn → redirects back to app
-- [ ] User is authenticated and can access `/app`
-- [ ] User metadata contains LinkedIn profile info
+- [x] Click "Sign in with LinkedIn" → redirects to LinkedIn
+- [x] Authorize on LinkedIn → redirects back to app
+- [x] User is authenticated and can access `/app`
+- [x] Supabase Site URL correctly set for production redirects
 
 #### LinkedIn OIDC Scopes Available
 | Scope | Data Returned |
@@ -1490,13 +1494,22 @@ This could improve semantic search relevance.
 
 ---
 
-**Next Step:** Phase 7 - Deployment (Vercel + Supabase)
+**Next Step:** Phase 9 Portfolio Deliverables OR Phase 10 Enhancements
 
-**Current Status (2025-12-29):**
-- Database: Running on port 5434 (PostgreSQL + pgvector)
-- Backend: Running on port 8000 (FastAPI + LangChain)
-- Frontend: Running on port 3001 (Next.js 16 + Tailwind v4)
-- Integration: ✅ All core features working
-- Markdown: ✅ ReactMarkdown for formatted responses
+**Current Status (2025-01-01):**
+- Production URL: https://finanalyzer-demo.vercel.app/
+- Database: Supabase PostgreSQL + pgvector
+- Backend: FastAPI on Vercel serverless
+- Frontend: Next.js 14 on Vercel
+- Auth: ✅ Email/password + LinkedIn OAuth (multi-provider)
+- All core phases (1-8.7): ✅ Complete
+- Phase 10.5 LinkedIn OAuth: ✅ Complete
 
-**Ready for:** Deploy to production OR add PDF/Charts for enhanced portfolio
+**Pending Work:**
+| Phase | Description | Effort |
+|-------|-------------|--------|
+| 9.x | Portfolio Deliverables (PDFs, videos, screenshots) | Manual |
+| 10.1 | PDF Processing | 4 hrs |
+| 10.2 | n8n Webhook | 2 hrs |
+| 10.3 | Spending Charts | 3 hrs |
+| 10.4 | Voice Input | 4 hrs |
