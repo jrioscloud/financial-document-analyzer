@@ -1276,6 +1276,7 @@ No new env vars needed - Supabase handles LinkedIn credentials in dashboard.
 #### Configuration Applied
 - LinkedIn Client ID: `78n9890iwl54bj`
 - Supabase Site URL: Updated from `localhost:3000` → `https://finanalyzer-demo.vercel.app`
+- Feature Flag: `NEXT_PUBLIC_ENABLE_LINKEDIN_AUTH` (enabled in production)
 
 #### Test Cases
 - [x] Click "Sign in with LinkedIn" → redirects to LinkedIn
