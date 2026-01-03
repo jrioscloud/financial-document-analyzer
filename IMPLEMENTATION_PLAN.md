@@ -306,6 +306,7 @@ def generate_report(date_from: str, date_to: str) -> str:
 - [x] Markdown rendering: Added ReactMarkdown for formatted responses
 - [x] Table rendering: Added `remark-gfm` plugin for GFM table support (2025-12-30)
 - [x] Math/LaTeX rendering: Added `remark-math` + `rehype-katex` for equations (2025-12-30)
+- [x] Math typography: Fixed KaTeX serif fonts blending poorly with UI, added brand colors and proper spacing (2026-01-02)
 
 ### 6.3 Known Issues
 - [ ] Duplicate transactions when CSV uploaded multiple times (needs dedup logic)
