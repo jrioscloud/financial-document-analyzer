@@ -76,7 +76,12 @@ function MarkdownContent({ content }: { content: string }) {
   return (
     <div className="prose-chat">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkMath]}
+        remarkPlugins={[
+          remarkGfm,
+          // Disable $ as math delimiter - only use \(...\) and \[...\]
+          // This prevents currency values like $7,370.56 from being parsed as math
+          [remarkMath, { singleDollarTextMath: false }]
+        ]}
         rehypePlugins={[rehypeKatex]}
         components={{
           // Headings - Clear visual hierarchy
@@ -199,15 +204,19 @@ function MarkdownContent({ content }: { content: string }) {
 
 function MessageBubble({ message, index }: { message: ChatMessage; index: number }) {
   const isUser = message.role === "user";
-  // Detect markdown, tables, and math expressions for proper rendering
+  // Detect markdown and tables for proper rendering
+  // Note: We don't detect $ as math because currency values like $7,370.56
+  // would be incorrectly parsed as LaTeX. Only detect explicit LaTeX commands.
   const hasRichContent = !isUser && (
     message.content.includes("###") ||
     message.content.includes("**") ||
     message.content.includes("- ") ||
     message.content.includes("| ") ||
-    message.content.includes("$") ||      // Inline math $...$
     message.content.includes("\\[") ||    // Display math \[...\]
+    message.content.includes("\\(") ||    // Inline math \(...\)
     message.content.includes("\\frac") || // LaTeX fractions
+    message.content.includes("\\sum") ||  // LaTeX summation
+    message.content.includes("\\int") ||  // LaTeX integral
     message.content.includes("\\text")    // LaTeX text
   );
 
