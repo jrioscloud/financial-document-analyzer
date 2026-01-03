@@ -701,3 +701,115 @@ html {
 html {
   color-scheme: dark;
 }
+
+/* ============================================
+   AESTHETIC FRAMEWORK: KaTeX Math Styling
+   BEAUTIFUL stage - Math typography for dark mode
+   ============================================ */
+
+/* Override KaTeX default serif fonts with system sans-serif */
+.katex {
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif !important;
+  font-size: 1em !important;
+}
+
+.katex .mathnormal,
+.katex .mathit {
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif !important;
+  font-style: normal !important;
+}
+
+/* Make math visually distinct with brand color */
+.katex .mord,
+.katex .mrel,
+.katex .mbin,
+.katex .mopen,
+.katex .mclose,
+.katex .mpunct,
+.katex .minner {
+  color: var(--brand-400) !important;
+}
+
+/* Inline math - subtle background pill */
+.katex-display {
+  margin: 1rem 0 !important;
+  padding: 1rem !important;
+  background: oklch(0.60 0.18 150 / 0.08) !important;
+  border-radius: 0.75rem !important;
+  border: 1px solid oklch(0.60 0.18 150 / 0.15) !important;
+  overflow-x: auto !important;
+}
+
+/* Inline math styling */
+span:has(> .katex:not(.katex-display .katex)) {
+  display: inline-flex;
+  align-items: baseline;
+  padding: 0.125rem 0.375rem;
+  margin: 0 0.125rem;
+  background: oklch(0.60 0.18 150 / 0.1);
+  border-radius: 0.375rem;
+  border: 1px solid oklch(0.60 0.18 150 / 0.12);
+}
+
+/* Fix fraction and operator styling */
+.katex .frac-line {
+  border-color: var(--brand-400) !important;
+}
+
+.katex .mfrac .frac-line {
+  background: var(--brand-400) !important;
+}
+
+/* ============================================
+   AESTHETIC FRAMEWORK: Prose Content Styling
+   BEAUTIFUL stage - Readable text content
+   ============================================ */
+
+.prose-chat {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: oklch(0.92 0.005 240);
+}
+
+.prose-chat p {
+  margin-bottom: 0.75rem;
+}
+
+.prose-chat p:last-child {
+  margin-bottom: 0;
+}
+
+/* Better spacing between text and math */
+.prose-chat .katex {
+  margin: 0 0.15em;
+}
+
+/* Highlight amounts and currencies */
+.prose-chat strong {
+  color: var(--brand-400);
+  font-weight: 600;
+}
+
+/* List styling for financial data */
+.prose-chat ul {
+  margin: 0.75rem 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.prose-chat li {
+  position: relative;
+  padding-left: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose-chat li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.625rem;
+  width: 0.375rem;
+  height: 0.375rem;
+  background: var(--brand-500);
+  border-radius: 50%;
+}

@@ -71,137 +71,144 @@ function InlineToolIndicator({ tools }: { tools: string[] }) {
   );
 }
 
-// Markdown content with styled components
+// Markdown content with styled components - AESTHETIC FRAMEWORK applied
 function MarkdownContent({ content }: { content: string }) {
   return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm, remarkMath]}
-      rehypePlugins={[rehypeKatex]}
-      components={{
-        // Headings
-        h1: ({ children }) => (
-          <h1 className="text-lg font-bold text-foreground mb-3 pb-2 border-b border-brand-500/20">
-            {children}
-          </h1>
-        ),
-        h2: ({ children }) => (
-          <h2 className="text-base font-semibold text-foreground mb-2 mt-4 first:mt-0">
-            {children}
-          </h2>
-        ),
-        h3: ({ children }) => (
-          <h3 className="text-sm font-semibold text-foreground mb-2 mt-3 first:mt-0 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-brand-500" />
-            {children}
-          </h3>
-        ),
-        h4: ({ children }) => (
-          <h4 className="text-sm font-medium text-brand-400 mb-1.5 mt-2 first:mt-0">
-            {children}
-          </h4>
-        ),
-        // Paragraphs
-        p: ({ children }) => (
-          <p className="text-sm leading-relaxed mb-2 last:mb-0 text-foreground/90">
-            {children}
-          </p>
-        ),
-        // Strong/Bold
-        strong: ({ children }) => (
-          <strong className="font-semibold text-brand-400">{children}</strong>
-        ),
-        // Emphasis/Italic
-        em: ({ children }) => (
-          <em className="italic text-foreground/80">{children}</em>
-        ),
-        // Lists
-        ul: ({ children }) => (
-          <ul className="space-y-1.5 mb-3 last:mb-0">{children}</ul>
-        ),
-        ol: ({ children }) => (
-          <ol className="space-y-1.5 mb-3 last:mb-0 list-decimal list-inside">{children}</ol>
-        ),
-        li: ({ children }) => (
-          <li className="text-sm leading-relaxed flex items-start gap-2">
-            <span className="mt-2 w-1 h-1 rounded-full bg-brand-500/60 flex-shrink-0" />
-            <span className="flex-1">{children}</span>
-          </li>
-        ),
-        // Code
-        code: ({ children, className }) => {
-          const isBlock = className?.includes("language-");
-          if (isBlock) {
+    <div className="prose-chat">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[rehypeKatex]}
+        components={{
+          // Headings - Clear visual hierarchy
+          h1: ({ children }) => (
+            <h1 className="text-lg font-bold text-foreground mb-4 pb-2 border-b border-brand-500/20">
+              {children}
+            </h1>
+          ),
+          h2: ({ children }) => (
+            <h2 className="text-base font-semibold text-foreground mb-3 mt-5 first:mt-0">
+              {children}
+            </h2>
+          ),
+          h3: ({ children }) => (
+            <h3 className="text-sm font-semibold text-foreground mb-2 mt-4 first:mt-0 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-brand-500" />
+              {children}
+            </h3>
+          ),
+          h4: ({ children }) => (
+            <h4 className="text-sm font-medium text-brand-400 mb-2 mt-3 first:mt-0">
+              {children}
+            </h4>
+          ),
+          // Paragraphs - Comfortable reading
+          p: ({ children }) => (
+            <p className="text-[0.9375rem] leading-[1.75] mb-3 last:mb-0 text-foreground/90">
+              {children}
+            </p>
+          ),
+          // Strong/Bold - Brand accent
+          strong: ({ children }) => (
+            <strong className="font-semibold text-brand-400">{children}</strong>
+          ),
+          // Emphasis/Italic
+          em: ({ children }) => (
+            <em className="text-foreground/80 not-italic font-medium">{children}</em>
+          ),
+          // Lists - Clear structure
+          ul: ({ children }) => (
+            <ul className="my-3 space-y-2">{children}</ul>
+          ),
+          ol: ({ children }) => (
+            <ol className="my-3 space-y-2 list-decimal list-inside marker:text-brand-400">{children}</ol>
+          ),
+          li: ({ children }) => (
+            <li className="text-[0.9375rem] leading-relaxed flex items-start gap-2.5 pl-1">
+              <span className="mt-[0.6rem] w-1.5 h-1.5 rounded-full bg-brand-500 flex-shrink-0" />
+              <span className="flex-1">{children}</span>
+            </li>
+          ),
+          // Code - Technical styling
+          code: ({ children, className }) => {
+            const isBlock = className?.includes("language-");
+            if (isBlock) {
+              return (
+                <code className="block bg-background/60 rounded-lg p-4 text-xs font-mono overflow-x-auto border border-border/50">
+                  {children}
+                </code>
+              );
+            }
             return (
-              <code className="block bg-background/50 rounded-lg p-3 text-xs font-mono overflow-x-auto border border-border/50">
+              <code className="px-1.5 py-0.5 rounded-md bg-brand-500/10 text-brand-400 text-[0.8125rem] font-mono">
                 {children}
               </code>
             );
-          }
-          return (
-            <code className="px-1.5 py-0.5 rounded bg-brand-500/10 text-brand-400 text-xs font-mono">
+          },
+          pre: ({ children }) => (
+            <pre className="my-4">{children}</pre>
+          ),
+          // Links
+          a: ({ href, children }) => (
+            <a
+              href={href}
+              className="text-brand-400 hover:text-brand-300 underline underline-offset-2 transition-colors"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               {children}
-            </code>
-          );
-        },
-        pre: ({ children }) => (
-          <pre className="mb-3 last:mb-0">{children}</pre>
-        ),
-        // Links
-        a: ({ href, children }) => (
-          <a
-            href={href}
-            className="text-brand-400 hover:text-brand-300 underline underline-offset-2 transition-colors"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {children}
-          </a>
-        ),
-        // Blockquote
-        blockquote: ({ children }) => (
-          <blockquote className="border-l-2 border-brand-500/40 pl-3 my-2 italic text-foreground/70">
-            {children}
-          </blockquote>
-        ),
-        // Horizontal rule
-        hr: () => (
-          <hr className="my-3 border-t border-border/50" />
-        ),
-        // Tables
-        table: ({ children }) => (
-          <div className="overflow-x-auto my-3 rounded-lg border border-border/50">
-            <table className="w-full text-sm">{children}</table>
-          </div>
-        ),
-        thead: ({ children }) => (
-          <thead className="bg-brand-500/10 border-b border-border/50">{children}</thead>
-        ),
-        tbody: ({ children }) => (
-          <tbody className="divide-y divide-border/30">{children}</tbody>
-        ),
-        tr: ({ children }) => (
-          <tr className="hover:bg-brand-500/5 transition-colors">{children}</tr>
-        ),
-        th: ({ children }) => (
-          <th className="px-3 py-2 text-left font-semibold text-brand-400">{children}</th>
-        ),
-        td: ({ children }) => (
-          <td className="px-3 py-2 text-foreground/90">{children}</td>
-        ),
-      }}
-    >
-      {content}
-    </ReactMarkdown>
+            </a>
+          ),
+          // Blockquote - Styled callout
+          blockquote: ({ children }) => (
+            <blockquote className="border-l-2 border-brand-500/50 pl-4 my-4 py-1 bg-brand-500/5 rounded-r-lg text-foreground/80">
+              {children}
+            </blockquote>
+          ),
+          // Horizontal rule
+          hr: () => (
+            <hr className="my-5 border-t border-border/50" />
+          ),
+          // Tables - Financial data display
+          table: ({ children }) => (
+            <div className="overflow-x-auto my-4 rounded-xl border border-border/50 bg-background/30">
+              <table className="w-full text-sm">{children}</table>
+            </div>
+          ),
+          thead: ({ children }) => (
+            <thead className="bg-brand-500/10 border-b border-border/50">{children}</thead>
+          ),
+          tbody: ({ children }) => (
+            <tbody className="divide-y divide-border/30">{children}</tbody>
+          ),
+          tr: ({ children }) => (
+            <tr className="hover:bg-brand-500/5 transition-colors">{children}</tr>
+          ),
+          th: ({ children }) => (
+            <th className="px-4 py-2.5 text-left font-semibold text-brand-400 text-xs uppercase tracking-wider">{children}</th>
+          ),
+          td: ({ children }) => (
+            <td className="px-4 py-2.5 text-foreground/90">{children}</td>
+          ),
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
   );
 }
 
 function MessageBubble({ message, index }: { message: ChatMessage; index: number }) {
   const isUser = message.role === "user";
-  const hasMarkdown = !isUser && (
+  // Detect markdown, tables, and math expressions for proper rendering
+  const hasRichContent = !isUser && (
     message.content.includes("###") ||
     message.content.includes("**") ||
     message.content.includes("- ") ||
-    message.content.includes("| ")
+    message.content.includes("| ") ||
+    message.content.includes("$") ||      // Inline math $...$
+    message.content.includes("\\[") ||    // Display math \[...\]
+    message.content.includes("\\frac") || // LaTeX fractions
+    message.content.includes("\\text")    // LaTeX text
   );
 
   return (
@@ -225,10 +232,10 @@ function MessageBubble({ message, index }: { message: ChatMessage; index: number
             <InlineToolIndicator tools={message.tools_used || []} />
 
             {/* Message Content */}
-            {hasMarkdown ? (
+            {hasRichContent ? (
               <MarkdownContent content={message.content} />
             ) : (
-              <p className="text-sm leading-relaxed text-foreground/90">
+              <p className="text-[0.9375rem] leading-[1.75] text-foreground/90">
                 {message.content}
               </p>
             )}
