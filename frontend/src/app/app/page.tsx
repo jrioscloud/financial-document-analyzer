@@ -314,10 +314,9 @@ export default function AppPage() {
         <div className="p-4">
           <button
             onClick={handleNewChat}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl
-                     border border-border/50 bg-secondary/50 hover:bg-secondary
-                     text-sm font-medium text-foreground
-                     transition-all duration-200 hover:border-brand-500/30 interactive-lift"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl
+                     gradient-brand text-white font-medium
+                     transition-all duration-200 btn-glow interactive-lift"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -479,7 +478,7 @@ export default function AppPage() {
       {/* Main Chat Area */}
       <main className="relative z-10 flex-1 flex flex-col p-6">
         {/* Gradient Border Container */}
-        <div className="flex-1 flex flex-col gradient-border rounded-2xl glow">
+        <div className="flex-1 flex flex-col gradient-border-animated rounded-2xl glow animate-glow-pulse">
           <div className="flex-1 flex flex-col bg-background rounded-2xl overflow-hidden">
             {/* Window Chrome */}
             <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
