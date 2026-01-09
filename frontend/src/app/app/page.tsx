@@ -15,11 +15,70 @@ import Link from "next/link";
 const SESSION_KEY = "financial-analyzer-session";
 const HAS_DATA_KEY = "financial-analyzer-has-data";
 
+// Demo conversation to show on first visit
+const DEMO_MESSAGES: ChatMessage[] = [
+  {
+    role: "user",
+    content: "What were my biggest expenses last month?",
+  },
+  {
+    role: "assistant",
+    content: `Here's your spending breakdown for **December 2024**:
+
+| Category | Amount | % of Total |
+|----------|--------|------------|
+| Rent & Housing | $1,450.00 | 52% |
+| Food & Groceries | $623.45 | 22% |
+| Transportation | $287.30 | 10% |
+| Entertainment | $156.80 | 6% |
+| Subscriptions | $89.97 | 3% |
+| Other | $192.48 | 7% |
+
+**Total spending:** $2,800.00`,
+    tools_used: ["analyze_spending"],
+  },
+  {
+    role: "user",
+    content: "Find all my Uber transactions",
+  },
+  {
+    role: "assistant",
+    content: `Found **8 Uber transactions** totaling $142.50:
+
+- Dec 28 - UBER *TRIP - $23.45
+- Dec 21 - UBER *TRIP - $18.90
+- Dec 15 - UBER EATS - $34.20
+- Dec 12 - UBER *TRIP - $15.75
+- Dec 8 - UBER EATS - $22.40
+- Dec 5 - UBER *TRIP - $12.30
+- Dec 3 - UBER *TRIP - $8.50
+- Dec 1 - UBER EATS - $7.00
+
+Most of your Uber spending (62%) was on rides, with 38% on Uber Eats.`,
+    tools_used: ["search_transactions"],
+  },
+  {
+    role: "user",
+    content: "How does my food spending compare to last month?",
+  },
+  {
+    role: "assistant",
+    content: `Your food spending **decreased by 8.5%** from November to December:
+
+- **November:** $681.20 (47 transactions)
+- **December:** $623.45 (42 transactions)
+
+You saved $57.75 this month! The decrease was mainly due to fewer restaurant visits (down from 18 to 12 transactions).`,
+    tools_used: ["compare_periods"],
+  },
+];
+
 export default function AppPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [showingDemo, setShowingDemo] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [hasData, setHasData] = useState(false);
@@ -71,7 +130,7 @@ export default function AppPage() {
     router.refresh();
   };
 
-  // Load session from localStorage on mount
+  // Load session from localStorage on mount, or show demo messages
   useEffect(() => {
     const storedSession = localStorage.getItem(SESSION_KEY);
     if (storedSession) {
@@ -79,13 +138,25 @@ export default function AppPage() {
       // Load history for existing session
       getHistory(storedSession)
         .then((data) => {
-          setMessages(data.messages);
+          if (data.messages.length > 0) {
+            setMessages(data.messages);
+          } else {
+            // No messages in session, show demo
+            setMessages(DEMO_MESSAGES);
+            setShowingDemo(true);
+          }
         })
         .catch((err) => {
           console.error("Failed to load history:", err);
-          // Start fresh if history fails
+          // Start fresh with demo if history fails
           localStorage.removeItem(SESSION_KEY);
+          setMessages(DEMO_MESSAGES);
+          setShowingDemo(true);
         });
+    } else {
+      // No session, show demo messages
+      setMessages(DEMO_MESSAGES);
+      setShowingDemo(true);
     }
   }, []);
 
@@ -98,6 +169,12 @@ export default function AppPage() {
 
   const handleSend = useCallback(
     async (message: string) => {
+      // Clear demo messages when user sends their first real message
+      if (showingDemo) {
+        setShowingDemo(false);
+        setMessages([]);
+      }
+
       // Add user message immediately
       const userMessage: ChatMessage = {
         role: "user",
@@ -131,7 +208,7 @@ export default function AppPage() {
         setIsLoading(false);
       }
     },
-    [sessionId]
+    [sessionId, showingDemo]
   );
 
   const handleUploadComplete = (result: UploadResponse) => {
@@ -166,7 +243,8 @@ export default function AppPage() {
   const handleNewChat = () => {
     localStorage.removeItem(SESSION_KEY);
     setSessionId(null);
-    setMessages([]);
+    setMessages(DEMO_MESSAGES);
+    setShowingDemo(true);
     setError(null);
   };
 
@@ -413,6 +491,28 @@ export default function AppPage() {
               <span className="text-sm text-muted-foreground">financial-analyzer.app</span>
               <div className="w-16" />
             </div>
+
+            {/* Demo Banner */}
+            {showingDemo && (
+              <div className="px-6 py-2 bg-brand-500/10 border-b border-brand-500/20 animate-fade-in">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-xs text-brand-400">
+                      Viewing demo conversation — upload your data and ask a question to start your own session
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => { setShowingDemo(false); setMessages([]); }}
+                    className="text-xs text-brand-400 hover:text-brand-300 transition-colors"
+                  >
+                    Clear demo
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Chat Content */}
             <ChatWidget
