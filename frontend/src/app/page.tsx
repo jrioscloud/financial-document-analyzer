@@ -170,57 +170,15 @@ export default function LandingPage() {
 
               {/* Chat Messages */}
               <div className="p-6 h-[400px] overflow-y-auto space-y-4">
-                {/* User Message */}
+                {/* User Message 1 */}
                 <div className="flex justify-end animate-slide-up" style={{ animationDelay: "0.1s" }}>
                   <div className="chat-bubble-user px-4 py-3 rounded-2xl rounded-br-md max-w-md">
-                    <p className="text-sm text-white">How much did I spend on restaurants last month?</p>
+                    <p className="text-sm text-white">What were my top expenses last month?</p>
                   </div>
                 </div>
 
-                {/* AI Response */}
+                {/* AI Response 1 */}
                 <div className="flex justify-start animate-slide-up" style={{ animationDelay: "0.3s" }}>
-                  <div className="chat-bubble-ai px-4 py-3 rounded-2xl rounded-bl-md max-w-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-6 h-6 rounded-lg gradient-brand flex items-center justify-center">
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                      </div>
-                      <span className="text-xs text-muted-foreground">Using analyze_spending tool</span>
-                    </div>
-                    <p className="text-sm">
-                      You spent <span className="text-brand-400 font-semibold">$847.32</span> on restaurants in November 2024.
-                      That&apos;s across <span className="text-brand-400 font-semibold">23 transactions</span>, averaging $36.84 per visit.
-                    </p>
-                    <div className="mt-3 p-3 rounded-lg bg-secondary/30">
-                      <p className="text-xs text-muted-foreground mb-2">Top merchants:</p>
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-sm">
-                          <span>Coffee Shop A</span>
-                          <span className="text-muted-foreground">$156.20</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Restaurant B</span>
-                          <span className="text-muted-foreground">$124.50</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Takeout C</span>
-                          <span className="text-muted-foreground">$98.00</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* User Follow-up */}
-                <div className="flex justify-end animate-slide-up" style={{ animationDelay: "0.5s" }}>
-                  <div className="chat-bubble-user px-4 py-3 rounded-2xl rounded-br-md max-w-md">
-                    <p className="text-sm text-white">Compare that to October</p>
-                  </div>
-                </div>
-
-                {/* AI Comparison */}
-                <div className="flex justify-start animate-slide-up" style={{ animationDelay: "0.7s" }}>
                   <div className="chat-bubble-ai px-4 py-3 rounded-2xl rounded-bl-md max-w-lg">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-6 h-6 rounded-lg gradient-brand flex items-center justify-center">
@@ -228,26 +186,133 @@ export default function LandingPage() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                         </svg>
                       </div>
+                      <span className="text-xs text-muted-foreground">Using analyze_spending tool</span>
+                    </div>
+                    <p className="text-sm mb-3">
+                      Here&apos;s your spending breakdown for <span className="text-brand-400 font-semibold">December 2024</span>:
+                    </p>
+                    <div className="p-3 rounded-lg bg-secondary/30">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-brand-500"></span>
+                            Rent &amp; Housing
+                          </span>
+                          <span className="font-semibold">$1,450.00</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                            Food &amp; Groceries
+                          </span>
+                          <span className="font-semibold">$623.45</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                            Transportation
+                          </span>
+                          <span className="font-semibold">$287.30</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-teal-500"></span>
+                            Subscriptions
+                          </span>
+                          <span className="font-semibold">$89.97</span>
+                        </div>
+                      </div>
+                      <div className="mt-3 pt-2 border-t border-border/30 flex justify-between text-sm">
+                        <span className="text-muted-foreground">Total</span>
+                        <span className="font-bold text-brand-400">$2,450.72</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* User Message 2 */}
+                <div className="flex justify-end animate-slide-up" style={{ animationDelay: "0.5s" }}>
+                  <div className="chat-bubble-user px-4 py-3 rounded-2xl rounded-br-md max-w-md">
+                    <p className="text-sm text-white">Find all my Uber transactions</p>
+                  </div>
+                </div>
+
+                {/* AI Response 2 */}
+                <div className="flex justify-start animate-slide-up" style={{ animationDelay: "0.7s" }}>
+                  <div className="chat-bubble-ai px-4 py-3 rounded-2xl rounded-bl-md max-w-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 rounded-lg gradient-brand flex items-center justify-center">
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </div>
+                      <span className="text-xs text-muted-foreground">Using search_transactions tool</span>
+                    </div>
+                    <p className="text-sm mb-3">
+                      Found <span className="text-brand-400 font-semibold">8 Uber transactions</span> totaling $142.50:
+                    </p>
+                    <div className="p-3 rounded-lg bg-secondary/30 space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Dec 28</span>
+                        <span>UBER *TRIP</span>
+                        <span className="font-medium">$23.45</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Dec 21</span>
+                        <span>UBER *TRIP</span>
+                        <span className="font-medium">$18.90</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Dec 15</span>
+                        <span>UBER EATS</span>
+                        <span className="font-medium">$34.20</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground text-center pt-1">
+                        +5 more transactions...
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* User Message 3 */}
+                <div className="flex justify-end animate-slide-up" style={{ animationDelay: "0.9s" }}>
+                  <div className="chat-bubble-user px-4 py-3 rounded-2xl rounded-br-md max-w-md">
+                    <p className="text-sm text-white">How does this compare to November?</p>
+                  </div>
+                </div>
+
+                {/* AI Response 3 */}
+                <div className="flex justify-start animate-slide-up" style={{ animationDelay: "1.1s" }}>
+                  <div className="chat-bubble-ai px-4 py-3 rounded-2xl rounded-bl-md max-w-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-6 h-6 rounded-lg gradient-brand flex items-center justify-center">
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                        </svg>
+                      </div>
                       <span className="text-xs text-muted-foreground">Using compare_periods tool</span>
                     </div>
                     <p className="text-sm mb-3">
-                      Restaurant spending decreased by <span className="text-brand-400 font-semibold">12.3%</span> from October to November.
+                      Your Uber spending <span className="text-red-400 font-semibold">increased 23%</span> from November to December.
                     </p>
                     <div className="flex gap-4">
                       <div className="flex-1 p-3 rounded-lg bg-secondary/30 text-center">
-                        <p className="text-xs text-muted-foreground mb-1">October</p>
-                        <p className="text-lg font-semibold">$966.18</p>
+                        <p className="text-xs text-muted-foreground mb-1">November</p>
+                        <p className="text-lg font-semibold">$115.80</p>
                       </div>
                       <div className="flex items-center">
-                        <svg className="w-5 h-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                         </svg>
                       </div>
                       <div className="flex-1 p-3 rounded-lg bg-secondary/30 text-center">
-                        <p className="text-xs text-muted-foreground mb-1">November</p>
-                        <p className="text-lg font-semibold text-brand-400">$847.32</p>
+                        <p className="text-xs text-muted-foreground mb-1">December</p>
+                        <p className="text-lg font-semibold text-red-400">$142.50</p>
                       </div>
                     </div>
+                    <p className="text-xs text-muted-foreground mt-3">
+                      Holiday travel likely contributed to the increase.
+                    </p>
                   </div>
                 </div>
               </div>

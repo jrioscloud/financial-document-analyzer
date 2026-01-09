@@ -19,6 +19,7 @@ export default function AppPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [hasData, setHasData] = useState(false);
@@ -54,6 +55,15 @@ export default function AppPage() {
       setUserEmail(user?.email ?? null);
     });
   }, [supabase.auth]);
+
+  // Mark initialization complete after initial loads
+  useEffect(() => {
+    // Give a small delay to ensure UI doesn't flash
+    const timer = setTimeout(() => {
+      setIsInitializing(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -159,6 +169,37 @@ export default function AppPage() {
     setMessages([]);
     setError(null);
   };
+
+  // Show loading screen while initializing
+  if (isInitializing) {
+    return (
+      <div className="relative flex min-h-screen bg-background items-center justify-center">
+        {/* Ambient Background */}
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl animate-float" />
+          <div
+            className="absolute bottom-0 right-1/4 w-80 h-80 bg-teal-500/10 rounded-full blur-3xl animate-float"
+            style={{ animationDelay: "-3s" }}
+          />
+        </div>
+
+        {/* Loading Content */}
+        <div className="relative z-10 flex flex-col items-center gap-4 animate-fade-in">
+          <div className="w-16 h-16 rounded-2xl gradient-brand flex items-center justify-center glow animate-pulse-soft">
+            <BrandIcon className="w-8 h-8 text-white" />
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <h2 className="text-lg font-semibold text-foreground">Loading FinAnalyzer</h2>
+            <div className="flex gap-1">
+              <div className="w-2 h-2 bg-brand-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
+              <div className="w-2 h-2 bg-brand-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
+              <div className="w-2 h-2 bg-brand-500 rounded-full animate-bounce" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex min-h-screen bg-background overflow-hidden">
