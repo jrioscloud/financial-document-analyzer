@@ -126,6 +126,13 @@ export interface TransactionFilters {
   date_to?: string;
 }
 
+export interface SessionInfo {
+  id: string;
+  title: string;
+  message_count: number;
+  updated_at: string;
+}
+
 /**
  * Send a message to the chat API
  */
@@ -189,6 +196,22 @@ export async function getHistory(
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
     throw new Error(error.detail || "Failed to get history");
+  }
+
+  return response.json();
+}
+
+/**
+ * Get list of recent chat sessions
+ */
+export async function getSessions(
+  limit: number = 20
+): Promise<{ sessions: SessionInfo[] }> {
+  const response = await fetch(`${API_BASE}/api/sessions?limit=${limit}`);
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.detail || "Failed to get sessions");
   }
 
   return response.json();

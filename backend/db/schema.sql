@@ -68,9 +68,22 @@ CREATE INDEX IF NOT EXISTS idx_transactions_date_category ON transactions(date, 
 -- =============================================================================
 CREATE TABLE IF NOT EXISTS chat_sessions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title TEXT,                      -- First message or summary
+    message_count INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Migration: Add title and message_count columns if they don't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'chat_sessions' AND column_name = 'title') THEN
+        ALTER TABLE chat_sessions ADD COLUMN title TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'chat_sessions' AND column_name = 'message_count') THEN
+        ALTER TABLE chat_sessions ADD COLUMN message_count INTEGER DEFAULT 0;
+    END IF;
+END $$;
 
 -- =============================================================================
 -- Chat Messages Table (Message History)

@@ -7,22 +7,13 @@ import { ChatInput } from "@/components/ChatInput";
 import { FileUpload } from "@/components/FileUpload";
 import { BrandIcon } from "@/components/BrandIcon";
 import { TransactionBrowser } from "@/components/TransactionBrowser";
-import { sendMessage, getHistory, getStats, type ChatMessage, type UploadResponse, type StatsResponse } from "@/lib/api";
+import { sendMessage, getHistory, getStats, getSessions, type ChatMessage, type UploadResponse, type StatsResponse, type SessionInfo } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
 // Storage keys
 const SESSION_KEY = "financial-analyzer-session";
 const HAS_DATA_KEY = "financial-analyzer-has-data";
-const CHAT_HISTORY_KEY = "financial-analyzer-chat-history";
-
-// Chat history item type
-interface ChatHistoryItem {
-  id: string;
-  title: string;
-  timestamp: number;
-  messageCount: number;
-}
 
 // Demo conversation to show on first visit
 const DEMO_MESSAGES: ChatMessage[] = [
@@ -94,59 +85,36 @@ export default function AppPage() {
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [showBrowser, setShowBrowser] = useState(false);
   const [showFiles, setShowFiles] = useState(false);
-  const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([]);
+  const [chatHistory, setChatHistory] = useState<SessionInfo[]>([]);
   const [showChatHistory, setShowChatHistory] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const supabase = createClient();
 
-  // Load chat history from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem(CHAT_HISTORY_KEY);
-    if (stored) {
-      try {
-        setChatHistory(JSON.parse(stored));
-      } catch {
-        console.error("Failed to parse chat history");
-      }
+  // Load chat history from backend
+  const fetchChatHistory = useCallback(async () => {
+    try {
+      const data = await getSessions(20);
+      setChatHistory(data.sessions);
+    } catch (err) {
+      console.error("Failed to load chat history:", err);
     }
   }, []);
 
-  // Save chat history to localStorage when it changes
-  const saveChatHistory = useCallback((history: ChatHistoryItem[]) => {
-    setChatHistory(history);
-    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(history));
-  }, []);
-
-  // Update or add a chat to history
-  const updateChatHistory = useCallback((id: string, firstMessage: string, messageCount: number) => {
-    setChatHistory(prev => {
-      const existing = prev.find(h => h.id === id);
-      const title = firstMessage.slice(0, 50) + (firstMessage.length > 50 ? "..." : "");
-
-      if (existing) {
-        const updated = prev.map(h =>
-          h.id === id ? { ...h, title, messageCount, timestamp: Date.now() } : h
-        );
-        localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(updated));
-        return updated;
-      } else {
-        const newHistory = [{ id, title, timestamp: Date.now(), messageCount }, ...prev].slice(0, 20); // Keep last 20
-        localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(newHistory));
-        return newHistory;
-      }
-    });
-  }, []);
+  // Load chat history on mount
+  useEffect(() => {
+    fetchChatHistory();
+  }, [fetchChatHistory]);
 
   // Load a previous chat
-  const loadChat = useCallback(async (historyItem: ChatHistoryItem) => {
+  const loadChat = useCallback(async (session: SessionInfo) => {
     try {
       setIsLoading(true);
-      const data = await getHistory(historyItem.id);
+      const data = await getHistory(session.id);
       setMessages(data.messages);
-      setSessionId(historyItem.id);
+      setSessionId(session.id);
       setShowingDemo(false);
-      localStorage.setItem(SESSION_KEY, historyItem.id);
+      localStorage.setItem(SESSION_KEY, session.id);
     } catch (err) {
       console.error("Failed to load chat:", err);
       setError("Failed to load conversation");
@@ -236,7 +204,6 @@ export default function AppPage() {
   const handleSend = useCallback(
     async (message: string) => {
       // Clear demo messages when user sends their first real message
-      const isFirstMessage = showingDemo || messages.length === 0;
       if (showingDemo) {
         setShowingDemo(false);
         setMessages([]);
@@ -257,13 +224,7 @@ export default function AppPage() {
         // Update session ID if new
         if (response.session_id) {
           setSessionId(response.session_id);
-          // Update chat history with first message as title
-          if (isFirstMessage) {
-            updateChatHistory(response.session_id, message, 2);
-          } else {
-            // Update message count
-            updateChatHistory(response.session_id, messages[0]?.content || message, messages.length + 2);
-          }
+          localStorage.setItem(SESSION_KEY, response.session_id);
         }
 
         // Add assistant response
@@ -273,6 +234,9 @@ export default function AppPage() {
           tools_used: response.tools_used,
         };
         setMessages((prev) => [...prev, assistantMessage]);
+
+        // Refresh chat history from backend (session was updated server-side)
+        fetchChatHistory();
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : "Failed to send message";
         setError(errorMsg);
@@ -282,7 +246,7 @@ export default function AppPage() {
         setIsLoading(false);
       }
     },
-    [sessionId, showingDemo, messages, updateChatHistory]
+    [sessionId, showingDemo, fetchChatHistory]
   );
 
   const handleUploadComplete = (result: UploadResponse) => {
@@ -423,22 +387,22 @@ export default function AppPage() {
             </button>
             {showChatHistory && (
               <div className="space-y-1 max-h-40 overflow-y-auto animate-slide-down">
-                {chatHistory.map((item) => (
+                {chatHistory.map((session) => (
                   <button
-                    key={item.id}
-                    onClick={() => loadChat(item)}
+                    key={session.id}
+                    onClick={() => loadChat(session)}
                     className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-all duration-200
                               hover:bg-secondary/50 group
-                              ${sessionId === item.id ? 'bg-brand-500/10 border border-brand-500/20' : 'border border-transparent'}`}
+                              ${sessionId === session.id ? 'bg-brand-500/10 border border-brand-500/20' : 'border border-transparent'}`}
                   >
                     <div className="flex items-start gap-2">
                       <svg className="w-3.5 h-3.5 text-muted-foreground mt-0.5 flex-shrink-0 group-hover:text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                       </svg>
                       <div className="flex-1 min-w-0">
-                        <p className="text-foreground truncate">{item.title}</p>
+                        <p className="text-foreground truncate">{session.title}</p>
                         <p className="text-[10px] text-muted-foreground">
-                          {item.messageCount} messages · {new Date(item.timestamp).toLocaleDateString()}
+                          {session.message_count} messages · {new Date(session.updated_at).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
