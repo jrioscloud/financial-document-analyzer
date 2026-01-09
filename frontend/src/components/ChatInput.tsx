@@ -16,7 +16,7 @@ export function ChatInput({
 }: ChatInputProps) {
   const [message, setMessage] = useState("");
   const [isFocused, setIsFocused] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSend = () => {
     const trimmed = message.trim();
@@ -27,7 +27,7 @@ export function ChatInput({
     }
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -66,9 +66,8 @@ export function ChatInput({
           </button>
 
           {/* Input Field */}
-          <input
+          <textarea
             ref={inputRef}
-            type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -76,9 +75,10 @@ export function ChatInput({
             onBlur={() => setIsFocused(false)}
             placeholder={placeholder}
             disabled={disabled}
-            className="flex-1 bg-transparent border-none outline-none
+            rows={1}
+            className="flex-1 bg-transparent border-none outline-none resize-none
                       text-sm text-foreground placeholder:text-muted-foreground
-                      disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled:opacity-50 disabled:cursor-not-allowed max-h-32"
           />
 
           {/* Send Button */}
@@ -132,7 +132,7 @@ export function ChatInput({
         {/* Hint Text */}
         <div className="flex items-center justify-between mt-2 px-2">
           <p className="text-[11px] text-muted-foreground/60">
-            Press <kbd className="px-1.5 py-0.5 rounded bg-secondary/50 text-[10px] font-mono">Enter</kbd> to send
+            <kbd className="px-1.5 py-0.5 rounded bg-secondary/50 text-[10px] font-mono">Enter</kbd> to send · <kbd className="px-1.5 py-0.5 rounded bg-secondary/50 text-[10px] font-mono">Shift+Enter</kbd> for new line
           </p>
           {disabled && (
             <p className="text-[11px] text-brand-500 animate-pulse-soft">
