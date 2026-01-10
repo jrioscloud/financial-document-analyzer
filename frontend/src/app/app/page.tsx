@@ -54,7 +54,6 @@ export default function AppPage() {
       const data = await getHistory(session.id);
       setMessages(data.messages);
       setSessionId(session.id);
-      setShowingDemo(false);
       localStorage.setItem(SESSION_KEY, session.id);
     } catch (err) {
       console.error("Failed to load chat:", err);
