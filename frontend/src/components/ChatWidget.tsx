@@ -9,6 +9,7 @@ import "katex/dist/katex.min.css";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "@/lib/api";
+import { SpendingBreakdown, parseSpendingBreakdown } from "@/components/chat/SpendingBreakdown";
 
 interface ChatWidgetProps {
   messages: ChatMessage[];
@@ -73,6 +74,12 @@ function InlineToolIndicator({ tools }: { tools: string[] }) {
 
 // Markdown content with styled components - AESTHETIC FRAMEWORK applied
 function MarkdownContent({ content }: { content: string }) {
+  // First, check if this is a spending breakdown
+  const spendingData = parseSpendingBreakdown(content);
+  if (spendingData) {
+    return <SpendingBreakdown {...spendingData} />;
+  }
+
   return (
     <div className="prose-chat">
       <ReactMarkdown
