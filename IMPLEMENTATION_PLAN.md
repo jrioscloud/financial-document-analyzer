@@ -1674,3 +1674,141 @@ This could improve semantic search relevance.
 | 10.2 | n8n Webhook | 2 hrs |
 | 10.3 | Spending Charts | 3 hrs |
 | 10.4 | Voice Input | 4 hrs |
+
+---
+
+## Phase 11: Market-Driven Features (Capturely Analysis - Jan 2026)
+
+Based on Capturely job intelligence database (9,000+ notifications analyzed).
+
+### Market Demand Rankings
+
+| Feature | Jobs | Trend | Priority |
+|---------|------|-------|----------|
+| Automation | 161 | Growing | 🔥 HIGH |
+| Chat interfaces | 110 | Stable | ✅ Done |
+| AI Agent (agentic) | 99 | 🔥 +46% | ✅ Done |
+| Document processing | 40 | Stable | MEDIUM |
+| Pipeline orchestration | 35 | Growing | ✅ Done |
+| Integration/API | 192 | High | 🔥 HIGH |
+| Data visualization | 205 | High | 🔥 HIGH |
+
+### 11.1 Scheduled Reports (Automation - 161 jobs)
+**Match:** "automation", "scheduled", "workflow"
+
+```python
+# New tool: schedule_report
+@tool
+def schedule_report(
+    frequency: str,  # daily, weekly, monthly
+    report_type: str,  # spending_summary, category_breakdown
+    email: str
+) -> str:
+    """Schedule automated financial reports."""
+```
+
+**Implementation:**
+- [ ] Supabase scheduled functions OR n8n webhook
+- [ ] Email delivery via Resend/SendGrid
+- [ ] Report templates (spending summary, alerts)
+
+**Effort:** 4 hrs
+
+### 11.2 External Integrations (API - 192 jobs)
+**Match:** "integration", "API", "connect", "webhook"
+
+**Options:**
+1. **Plaid integration** - Auto-import bank transactions
+2. **Stripe integration** - Import business revenue
+3. **QuickBooks/Xero** - Accounting sync
+4. **Webhook endpoints** - Let users push data
+
+**MVP:** Webhook endpoint to receive transactions via API
+
+```python
+@app.post("/api/webhook/transactions")
+async def receive_transactions(
+    data: List[Transaction],
+    api_key: str = Header(...)
+):
+    """Receive transactions from external systems."""
+```
+
+**Effort:** 3 hrs
+
+### 11.3 Spending Visualizations (Data - 205 jobs)
+**Match:** "data", "visualization", "charts", "dashboard"
+
+**Components:**
+- [ ] Spending by category (pie chart)
+- [ ] Spending over time (line chart)
+- [ ] Income vs expenses (bar chart)
+- [ ] Top merchants (horizontal bar)
+
+**Tech:** Recharts or Chart.js in Next.js
+
+**Effort:** 4 hrs
+
+### 11.4 PDF Bank Statement Processing (Document - 40 jobs)
+**Match:** "document", "PDF", "OCR", "extract"
+
+**Implementation:**
+- [ ] PDF upload endpoint
+- [ ] pypdf2 or pdfplumber for text extraction
+- [ ] LLM-based transaction parsing
+- [ ] Support major bank statement formats
+
+**Effort:** 6 hrs
+
+### 11.5 Multi-Step Agent Workflows (AI Agent - 99 jobs)
+**Match:** "agentic", "autonomous", "multi-step"
+
+**Current:** Agent uses 1-2 tools per query
+**Enhanced:** Agent can plan and execute 5+ step workflows
+
+```python
+# Example: "Analyze my spending and create a budget"
+# Step 1: generate_report() → get spending by category
+# Step 2: compare_periods() → identify trends
+# Step 3: (new) suggest_budget() → create recommendations
+# Step 4: (new) set_alerts() → configure overspending alerts
+```
+
+**New tools:**
+- [ ] `suggest_budget` - AI-generated budget recommendations
+- [ ] `set_alert` - Spending threshold alerts
+- [ ] `find_savings` - Identify potential savings
+
+**Effort:** 5 hrs
+
+### 11.6 Voice Input (Voice AI - 56 jobs)
+**Match:** "voice", "speech", "assistant"
+
+**Implementation:**
+- [ ] Web Speech API for browser voice input
+- [ ] Whisper API for backend transcription
+- [ ] Voice command shortcuts ("show last month's spending")
+
+**Effort:** 4 hrs
+
+### Feature Priority Matrix
+
+| Feature | Market Demand | Effort | Demo Impact | Priority |
+|---------|---------------|--------|-------------|----------|
+| Spending Charts | 205 jobs | 4 hrs | HIGH | 🔥 1st |
+| Webhook API | 192 jobs | 3 hrs | MEDIUM | 2nd |
+| Scheduled Reports | 161 jobs | 4 hrs | HIGH | 3rd |
+| PDF Processing | 40 jobs | 6 hrs | HIGH | 4th |
+| Voice Input | 56 jobs | 4 hrs | WOW factor | 5th |
+| Multi-Step Agent | 99 jobs | 5 hrs | MEDIUM | 6th |
+
+### Recommended Next Sprint
+
+**Week of Jan 13-17:**
+1. ✅ Portfolio piece #1 complete (thumbnail, PDF, video)
+2. [ ] **11.3 Spending Charts** - Highest demand + demo impact
+3. [ ] **11.2 Webhook API** - "Integration" keyword popular
+
+**Week of Jan 20-24:**
+4. [ ] **11.1 Scheduled Reports** - Automation keyword
+5. [ ] **11.4 PDF Processing** - Document keyword

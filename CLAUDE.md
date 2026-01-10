@@ -1,5 +1,62 @@
 # Project Instructions for Claude
 
+## Capturely - Market Intelligence Integration
+
+This project uses **Capturely** for market research and feature prioritization.
+
+### Quick Database Queries
+
+```bash
+# Check Capturely status
+docker ps --filter "name=capturely"
+
+# Search job demand by keyword
+docker exec capturely_postgres psql -U capturely -d capturely -c "
+SELECT title FROM notifications
+WHERE notification_date >= '2025-12-01'
+  AND title ILIKE '%KEYWORD%'
+ORDER BY notification_date DESC LIMIT 10;"
+
+# Count keyword demand
+docker exec capturely_postgres psql -U capturely -d capturely -c "
+SELECT COUNT(*) FROM notifications
+WHERE notification_date >= '2025-12-01' AND title ILIKE '%RAG%';"
+
+# Compare feature demand
+docker exec capturely_postgres psql -U capturely -d capturely -c "
+SELECT
+  'RAG' as feature, COUNT(*) FROM notifications WHERE title ILIKE '%RAG%' AND notification_date >= '2025-12-01'
+UNION ALL
+SELECT 'AI Agent', COUNT(*) FROM notifications WHERE title ILIKE '%agent%' AND title ILIKE '%AI%' AND notification_date >= '2025-12-01'
+UNION ALL
+SELECT 'Automation', COUNT(*) FROM notifications WHERE title ILIKE '%automation%' AND notification_date >= '2025-12-01'
+ORDER BY count DESC;"
+```
+
+### Market Demand (Jan 2026)
+
+| Feature | Jobs | Priority |
+|---------|------|----------|
+| Full-Stack | 486 | Core |
+| SaaS | 403 | Core |
+| AI/ML | 358 | Core |
+| MVP | 176 | Core |
+| RAG | 106 | ✅ Implemented |
+| AI Agent | 99 | ✅ Implemented |
+| Automation | 161 | 🔜 Next |
+| Document | 40 | 🔜 Next |
+| Pipeline | 35 | ✅ Implemented |
+
+### Portfolio Assets Location
+```
+/Volumes/Chocoflan/Projects/financial-document-analyzer/portfolio_assets/
+├── thumbnails/   # Upwork thumbnail images
+├── screenshots/  # App screenshots for demos
+└── pdfs/         # Case study PDFs
+```
+
+---
+
 ## Credentials & Environment
 
 - **Demo credentials are in `frontend/.env.local`** - check there before asking for login info
