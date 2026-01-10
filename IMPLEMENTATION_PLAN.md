@@ -1299,6 +1299,162 @@ No new env vars needed - Supabase handles LinkedIn credentials in dashboard.
 
 ---
 
+### 10.6 Chat History Persistence
+**Executor:** Claude Code | **Time:** 1 hour
+**Status:** ✅ Complete (2026-01-09)
+**Purpose:** Enable users to see and load previous conversations
+
+#### Problem
+- Chat history was only stored in browser localStorage
+- Conversations lost when clearing browser data or switching devices
+- No way to see previous sessions in the UI
+
+#### Implementation
+
+**Step 1: Database Schema Update**
+Added columns to `chat_sessions` table:
+```sql
+ALTER TABLE chat_sessions ADD COLUMN title TEXT;
+ALTER TABLE chat_sessions ADD COLUMN message_count INTEGER DEFAULT 0;
+```
+
+**Step 2: Backend Changes**
+- `SessionMemory` now tracks and persists session titles (from first user message)
+- Message count updated on each new message
+- New `/api/sessions` endpoint lists recent sessions
+
+**Step 3: Frontend Changes**
+- Sidebar shows collapsible "Recent Chats" section
+- Sessions loaded from backend instead of localStorage
+- Click to load any previous conversation
+- Auto-refresh after sending messages
+
+#### Files Modified
+| File | Changes |
+|------|---------|
+| `backend/db/schema.sql` | Added title, message_count columns with migration |
+| `backend/agent/memory.py` | Title tracking, list_sessions() function |
+| `backend/main.py` | `/api/sessions` endpoint |
+| `frontend/src/lib/api.ts` | `getSessions()` API function |
+| `frontend/src/app/app/page.tsx` | Chat history sidebar UI |
+
+#### Commits
+- `94cda75` - feat: Add persistent chat history with backend storage
+
+---
+
+### 10.7 Agent UX Improvements
+**Executor:** Claude Code | **Time:** 1 hour
+**Status:** ✅ Complete (2026-01-09)
+**Purpose:** Make AI responses friendlier, cleaner, and match the landing page demo quality
+
+#### Problem
+- Agent responses used verbose markdown tables that looked cluttered
+- Response format inconsistent with polished demo on landing page
+- Tone was too formal/clinical
+
+#### Implementation
+
+**Step 1: System Prompt Overhaul**
+Updated `backend/agent/agent.py` with comprehensive formatting rules:
+
+```python
+## CRITICAL Formatting Rules
+- **NEVER use markdown tables** (no | pipes |)
+- Use simple `-` bullet lists for breakdowns
+- Always include a **Total** line at the end
+- Keep breakdown to top 5-7 categories max
+```
+
+**Step 2: Response Pattern Examples**
+Added explicit examples for each query type:
+
+```
+For spending queries:
+Here's your spending breakdown for **September 2025**:
+
+- Transportation - **$7,370.56 MXN**
+- Restaurants - **$5,197.14 MXN**
+- Travel - **$2,070.00 MXN**
+
+**Total: $16,476.64 MXN**
+```
+
+**Step 3: Tone Guidelines**
+- Conversational and friendly
+- Celebrate wins (spending decreases)
+- Keep insights brief and actionable
+
+#### Files Modified
+| File | Changes |
+|------|---------|
+| `backend/agent/agent.py` | Complete system prompt rewrite |
+
+#### Commits
+- `4c98931` - feat: Improve agent system prompt for friendlier responses
+- `2d18701` - fix: Update agent prompt to use clean list format instead of tables
+
+---
+
+### 10.8 MDX Component Rendering
+**Executor:** Claude Code | **Time:** 2 hours
+**Status:** ✅ Complete (2026-01-09)
+**Purpose:** Rich component rendering for structured financial data
+
+#### Problem
+- Raw markdown doesn't capture the visual polish of the landing page demo
+- Need consistent, beautiful rendering for spending breakdowns, comparisons, etc.
+
+#### Solution: Smart Markdown with Component Detection
+Instead of true MDX (which requires compilation), use pattern detection to auto-upgrade markdown to styled React components.
+
+**Approach:**
+1. LLM outputs markdown in specific formats (via system prompt)
+2. Frontend detects patterns (bullet lists with amounts, comparison patterns)
+3. Auto-render with custom styled components
+4. Fallback to standard markdown if no pattern matches
+
+**Components Created:**
+| Component | Pattern Detected | Renders As |
+|-----------|------------------|------------|
+| `SpendingBreakdown` | Bullet list with category - amount | Styled list with totals |
+| `ComparisonView` | Lines with → arrows and percentages | Side-by-side comparison |
+| `TransactionList` | Date - Description - Amount format | Searchable transaction table |
+| `TotalLine` | Lines starting with "Total:" | Highlighted total row |
+
+**System Prompt Additions:**
+```
+Available output components (frontend will auto-detect and style):
+
+1. SPENDING BREAKDOWN - Use this format:
+   - Category Name - **$X,XXX.XX**
+   - Another Category - **$XXX.XX**
+   **Total: $X,XXX.XX**
+
+2. COMPARISON - Use this format:
+   - Category: **$XXX** → **$XXX** (↑/↓ X%)
+
+3. TRANSACTION LIST - Use this format:
+   - Date - DESCRIPTION - **$XXX.XX**
+```
+
+#### Files Created/Modified
+| File | Changes |
+|------|---------|
+| `frontend/src/components/chat/SpendingBreakdown.tsx` | New: Styled spending list |
+| `frontend/src/components/chat/ComparisonView.tsx` | New: Side-by-side comparison |
+| `frontend/src/components/chat/TotalLine.tsx` | New: Highlighted total |
+| `frontend/src/components/ChatWidget.tsx` | Pattern detection + component rendering |
+| `backend/agent/agent.py` | Output format documentation |
+
+#### Benefits
+- Consistent, beautiful rendering matching landing page quality
+- No true MDX compilation needed (simpler, faster)
+- Graceful fallback to markdown
+- Backend-aware of available visual components
+
+---
+
 ## Market-Driven Feature Opportunities (from Capturely Q4 2025)
 
 Based on 223 RAG/AI/Document jobs captured in the last 60 days:
@@ -1498,7 +1654,7 @@ This could improve semantic search relevance.
 
 **Next Step:** Phase 9 Portfolio Deliverables OR Phase 10 Enhancements
 
-**Current Status (2025-01-01):**
+**Current Status (2026-01-09):**
 - Production URL: https://finanalyzer-demo.vercel.app/
 - Database: Supabase PostgreSQL + pgvector
 - Backend: FastAPI on Vercel serverless
@@ -1506,6 +1662,9 @@ This could improve semantic search relevance.
 - Auth: ✅ Email/password + LinkedIn OAuth (multi-provider)
 - All core phases (1-8.7): ✅ Complete
 - Phase 10.5 LinkedIn OAuth: ✅ Complete
+- Phase 10.6 Chat History Persistence: ✅ Complete
+- Phase 10.7 Agent UX Improvements: ✅ Complete
+- Phase 10.8 MDX Component Rendering: ✅ Complete
 
 **Pending Work:**
 | Phase | Description | Effort |
