@@ -320,6 +320,45 @@ async def get_stats(user: dict = Depends(verify_auth)):
             """)
             categories = [{"name": row["category"], "count": row["count"]} for row in cur.fetchall()]
 
+            # Category amounts (for charts) - sum of absolute amounts per category
+            cur.execute("""
+                SELECT category,
+                       SUM(ABS(amount)) as total_amount,
+                       COUNT(*) as count
+                FROM transactions
+                WHERE category IS NOT NULL AND amount < 0
+                GROUP BY category
+                ORDER BY total_amount DESC
+                LIMIT 10
+            """)
+            category_amounts = [
+                {
+                    "name": row["category"],
+                    "amount": float(row["total_amount"]),
+                    "count": row["count"]
+                }
+                for row in cur.fetchall()
+            ]
+
+            # Monthly spending trends (expenses only, grouped by month)
+            cur.execute("""
+                SELECT
+                    TO_CHAR(date, 'YYYY-MM') as month,
+                    SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END) as expenses,
+                    SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) as income
+                FROM transactions
+                GROUP BY TO_CHAR(date, 'YYYY-MM')
+                ORDER BY month ASC
+            """)
+            monthly_spending = [
+                {
+                    "month": row["month"],
+                    "expenses": float(row["expenses"]) if row["expenses"] else 0,
+                    "income": float(row["income"]) if row["income"] else 0
+                }
+                for row in cur.fetchall()
+            ]
+
             # Source banks with counts
             cur.execute("""
                 SELECT source_bank, COUNT(*) as count
@@ -368,6 +407,8 @@ async def get_stats(user: dict = Depends(verify_auth)):
                     "end": date_row["max_date"].isoformat() if date_row["max_date"] else None
                 },
                 "categories": categories,
+                "category_amounts": category_amounts,
+                "monthly_spending": monthly_spending,
                 "sources": sources,
                 "files": files,
                 "recent_transactions": recent,

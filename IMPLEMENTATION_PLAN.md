@@ -1736,18 +1736,26 @@ async def receive_transactions(
 
 **Effort:** 3 hrs
 
-### 11.3 Spending Visualizations (Data - 205 jobs)
+### 11.3 Spending Visualizations (Data - 205 jobs) ✅ COMPLETED
 **Match:** "data", "visualization", "charts", "dashboard"
 
 **Components:**
-- [ ] Spending by category (pie chart)
-- [ ] Spending over time (line chart)
-- [ ] Income vs expenses (bar chart)
-- [ ] Top merchants (horizontal bar)
+- [x] Spending by category (pie chart) - `SpendingPieChart.tsx`
+- [x] Spending over time (area chart) - `SpendingLineChart.tsx`
+- [x] Income vs expenses tracking - integrated in line chart
+- [x] Top categories (horizontal bar) - `SpendingBarChart.tsx`
 
-**Tech:** Recharts or Chart.js in Next.js
+**Additional Implementation:**
+- [x] Icon-based sidebar navigation (`IconSidebar.tsx`) - 64px collapsed
+- [x] Dashboard view with stats cards (`Dashboard.tsx`)
+- [x] View switching between Chat and Dashboard modes
+- [x] Enhanced `/api/stats` with `category_amounts` and `monthly_spending`
+- [x] Collapsible sidebar panel for chat history
+- [x] Recharts library with OKLCH color palette
 
-**Effort:** 4 hrs
+**Tech:** Recharts in Next.js with dark mode support
+
+**Effort:** 4 hrs (Completed Jan 2026)
 
 ### 11.4 PDF Bank Statement Processing (Document - 40 jobs)
 **Match:** "document", "PDF", "OCR", "extract"

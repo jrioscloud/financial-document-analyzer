@@ -78,6 +78,18 @@ export interface FileInfo {
   source: string;
 }
 
+export interface CategoryAmount {
+  name: string;
+  amount: number;
+  count: number;
+}
+
+export interface MonthlySpending {
+  month: string;
+  expenses: number;
+  income: number;
+}
+
 export interface StatsResponse {
   total_transactions: number;
   date_range: {
@@ -85,6 +97,8 @@ export interface StatsResponse {
     end: string;
   } | null;
   categories: { name: string; count: number }[];
+  category_amounts?: CategoryAmount[];
+  monthly_spending?: MonthlySpending[];
   sources: { name: string; count: number }[];
   files: FileInfo[];
   recent_transactions?: {

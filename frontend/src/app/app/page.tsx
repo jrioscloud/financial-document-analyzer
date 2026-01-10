@@ -7,6 +7,8 @@ import { ChatInput } from "@/components/ChatInput";
 import { FileUpload } from "@/components/FileUpload";
 import { BrandIcon } from "@/components/BrandIcon";
 import { TransactionBrowser } from "@/components/TransactionBrowser";
+import { IconSidebar, type ViewType } from "@/components/IconSidebar";
+import { Dashboard } from "@/components/Dashboard";
 import { sendMessage, getHistory, getStats, getSessions, type ChatMessage, type UploadResponse, type StatsResponse, type SessionInfo } from "@/lib/api";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
@@ -28,6 +30,8 @@ export default function AppPage() {
   const [showFiles, setShowFiles] = useState(false);
   const [chatHistory, setChatHistory] = useState<SessionInfo[]>([]);
   const [showChatHistory, setShowChatHistory] = useState(true);
+  const [activeView, setActiveView] = useState<ViewType>("chat");
+  const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const supabase = createClient();
@@ -251,22 +255,38 @@ export default function AppPage() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-brand-600/5 rounded-full blur-3xl" />
       </div>
 
-      {/* Sidebar */}
-      <aside className="relative z-10 w-80 border-r border-border/50 glass-strong flex flex-col">
-        {/* Logo & Header */}
-        <div className="p-5 border-b border-border/50">
+      {/* Icon Sidebar */}
+      <IconSidebar activeView={activeView} onViewChange={setActiveView} />
+
+      {/* Sidebar Expand Button (when collapsed) */}
+      {activeView === "chat" && !sidebarExpanded && (
+        <button
+          onClick={() => setSidebarExpanded(true)}
+          className="relative z-10 w-8 flex items-center justify-center border-r border-border/50 glass-strong text-muted-foreground hover:text-foreground transition-colors"
+          aria-label="Expand sidebar"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+          </svg>
+        </button>
+      )}
+
+      {/* Expandable Sidebar Panel - only show for chat view */}
+      {activeView === "chat" && (
+        <aside className={`relative z-10 border-r border-border/50 glass-strong flex flex-col transition-all duration-300 ${sidebarExpanded ? 'w-72' : 'w-0 overflow-hidden'}`}>
+        {/* Sidebar Header */}
+        <div className="p-4 border-b border-border/50">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-xl gradient-brand flex items-center justify-center glow-sm group-hover:scale-105 transition-transform">
-                <BrandIcon className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-base font-semibold text-foreground tracking-tight">
-                  FinAnalyzer
-                </h1>
-                <p className="text-xs text-muted-foreground">AI Financial Insights</p>
-              </div>
-            </Link>
+            <h2 className="text-sm font-medium text-foreground">Conversations</h2>
+            <button
+              onClick={() => setSidebarExpanded(false)}
+              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+              aria-label="Collapse sidebar"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -484,56 +504,84 @@ export default function AppPage() {
           </div>
         </div>
       </aside>
+      )}
 
-      {/* Main Chat Area */}
+      {/* Main Content Area */}
       <main className="relative z-10 flex-1 flex flex-col p-6">
-        {/* Gradient Border Container */}
-        <div className="flex-1 flex flex-col gradient-border-animated rounded-2xl glow animate-glow-pulse">
-          <div className="flex-1 flex flex-col bg-background rounded-2xl overflow-hidden">
-            {/* Window Chrome */}
-            <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500/80 hover:bg-red-500 transition-colors cursor-pointer" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500/80 hover:bg-yellow-500 transition-colors cursor-pointer" />
-                <div className="w-3 h-3 rounded-full bg-green-500/80 hover:bg-green-500 transition-colors cursor-pointer" />
+        {activeView === "chat" ? (
+          /* Chat View */
+          <div className="flex-1 flex flex-col gradient-border-animated rounded-2xl glow animate-glow-pulse">
+            <div className="flex-1 flex flex-col bg-background rounded-2xl overflow-hidden">
+              {/* Window Chrome */}
+              <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500/80 hover:bg-red-500 transition-colors cursor-pointer" />
+                  <div className="w-3 h-3 rounded-full bg-yellow-500/80 hover:bg-yellow-500 transition-colors cursor-pointer" />
+                  <div className="w-3 h-3 rounded-full bg-green-500/80 hover:bg-green-500 transition-colors cursor-pointer" />
+                </div>
+                <span className="text-sm text-muted-foreground">financial-analyzer.app</span>
+                <div className="w-16" />
               </div>
-              <span className="text-sm text-muted-foreground">financial-analyzer.app</span>
-              <div className="w-16" />
+
+              {/* Chat Content */}
+              <ChatWidget
+                messages={messages}
+                isLoading={isLoading}
+                hasData={hasData}
+                onSuggestionClick={handleSend}
+                onUploadClick={handleUploadClick}
+              />
+
+              {/* Error Banner */}
+              {error && (
+                <div className="px-6 py-3 bg-destructive/10 border-t border-destructive/20 animate-slide-up">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-sm text-destructive">{error}</p>
+                    <button
+                      onClick={() => setError(null)}
+                      className="ml-auto text-destructive/60 hover:text-destructive transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Chat Input */}
+              <ChatInput onSend={handleSend} disabled={isLoading} />
+            </div>
+          </div>
+        ) : (
+          /* Dashboard View */
+          <div className="flex-1 flex flex-col rounded-2xl bg-background border border-border/50 overflow-hidden">
+            {/* Dashboard Header */}
+            <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <h2 className="text-lg font-semibold text-foreground">Financial Dashboard</h2>
+                <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20">
+                  {stats?.total_transactions?.toLocaleString() || 0} transactions
+                </span>
+              </div>
+              <button
+                onClick={handleUploadClick}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                Upload More
+              </button>
             </div>
 
-            {/* Chat Content */}
-            <ChatWidget
-              messages={messages}
-              isLoading={isLoading}
-              hasData={hasData}
-              onSuggestionClick={handleSend}
-              onUploadClick={handleUploadClick}
-            />
-
-            {/* Error Banner */}
-            {error && (
-              <div className="px-6 py-3 bg-destructive/10 border-t border-destructive/20 animate-slide-up">
-                <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <p className="text-sm text-destructive">{error}</p>
-                  <button
-                    onClick={() => setError(null)}
-                    className="ml-auto text-destructive/60 hover:text-destructive transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Chat Input */}
-            <ChatInput onSend={handleSend} disabled={isLoading} />
+            {/* Dashboard Content */}
+            <Dashboard onUploadClick={handleUploadClick} />
           </div>
-        </div>
+        )}
       </main>
 
       {/* Transaction Browser Modal */}
