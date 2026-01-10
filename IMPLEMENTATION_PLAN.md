@@ -1752,6 +1752,8 @@ async def receive_transactions(
 - [x] Enhanced `/api/stats` with `category_amounts` and `monthly_spending`
 - [x] Collapsible sidebar panel for chat history
 - [x] Recharts library with OKLCH color palette
+- [x] Sankey flow chart (`SpendingFlowChart.tsx`) - gradient flows from total to categories
+- [x] Pointer cursor for all interactive elements (global CSS fix)
 
 **Tech:** Recharts in Next.js with dark mode support
 
