@@ -20,7 +20,7 @@ from models import ChatRequest, ChatResponse, UploadResponse, HealthResponse, Da
 from datetime import datetime
 from collections import Counter
 from agent.agent import create_agent, run_agent
-from agent.memory import get_or_create_session
+from agent.memory import get_or_create_session, list_sessions
 from utils.csv_parser import parse_csv
 from utils.embeddings import embed_transactions
 from db.init import init_db, store_transactions
@@ -264,6 +264,16 @@ async def get_history(session_id: str):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting history: {str(e)}")
+
+
+@app.get("/api/sessions")
+async def get_sessions(limit: int = 20):
+    """List recent chat sessions."""
+    try:
+        sessions = list_sessions(limit=limit)
+        return {"sessions": sessions}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error listing sessions: {str(e)}")
 
 
 @app.get("/api/stats")

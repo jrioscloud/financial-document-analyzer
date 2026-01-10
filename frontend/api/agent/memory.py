@@ -66,6 +66,7 @@ class SessionMemory:
 
     Each session has:
     - Unique UUID
+    - Title (first user message, truncated)
     - List of messages (user, assistant, system)
     - Timestamps for creation and last update
     - File context (uploaded file info, date ranges)
@@ -79,6 +80,7 @@ class SessionMemory:
             session_id: Existing session ID, or None to create new
         """
         self.file_context: Optional[Dict] = None  # Track uploaded file metadata
+        self.title: Optional[str] = None
 
         if session_id:
             self.session_id = session_id
@@ -93,7 +95,7 @@ class SessionMemory:
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
                     cur.execute(
-                        "INSERT INTO chat_sessions (id) VALUES (%s) ON CONFLICT DO NOTHING",
+                        "INSERT INTO chat_sessions (id, message_count) VALUES (%s, 0) ON CONFLICT DO NOTHING",
                         [self.session_id]
                     )
                     conn.commit()
@@ -109,15 +111,19 @@ class SessionMemory:
                 with conn.cursor(cursor_factory=RealDictCursor) as cur:
                     # Check if session exists, create if not
                     cur.execute(
-                        "SELECT id FROM chat_sessions WHERE id = %s",
+                        "SELECT id, title FROM chat_sessions WHERE id = %s",
                         [self.session_id]
                     )
-                    if not cur.fetchone():
+                    session_row = cur.fetchone()
+                    if not session_row:
                         cur.execute(
-                            "INSERT INTO chat_sessions (id) VALUES (%s)",
+                            "INSERT INTO chat_sessions (id, message_count) VALUES (%s, 0)",
                             [self.session_id]
                         )
                         conn.commit()
+                        self.title = None
+                    else:
+                        self.title = session_row.get("title")
 
                     # Load messages
                     cur.execute(
@@ -164,10 +170,11 @@ class SessionMemory:
         self._save_message(message)
 
     def _save_message(self, message: Dict):
-        """Save message to database."""
+        """Save message to database and update session metadata."""
         try:
             with get_db_connection() as conn:
                 with conn.cursor() as cur:
+                    # Insert the message
                     cur.execute(
                         """
                         INSERT INTO chat_messages (session_id, role, content, tools_used)
@@ -180,6 +187,32 @@ class SessionMemory:
                             message["tools_used"] if message["tools_used"] else None
                         ]
                     )
+
+                    # Update message count
+                    cur.execute(
+                        """
+                        UPDATE chat_sessions
+                        SET message_count = COALESCE(message_count, 0) + 1
+                        WHERE id = %s
+                        """,
+                        [self.session_id]
+                    )
+
+                    # Set title if first user message and no title yet
+                    if message["role"] == "user" and not self.title:
+                        title = message["content"][:100]  # Truncate to 100 chars
+                        if len(message["content"]) > 100:
+                            title = title.rsplit(' ', 1)[0] + "..."  # Cut at word boundary
+                        cur.execute(
+                            """
+                            UPDATE chat_sessions
+                            SET title = %s
+                            WHERE id = %s AND (title IS NULL OR title = '')
+                            """,
+                            [title, self.session_id]
+                        )
+                        self.title = title
+
                     conn.commit()
         except Exception as e:
             print(f"Warning: Could not save message to database: {e}")
@@ -268,6 +301,45 @@ Data date range: {self.file_context['date_start']} to {self.file_context['date_e
 When the user refers to "this month", "my spending", or "the file", they mean the data from {self.file_context['primary_month']} - NOT the current calendar month.
 Always use dates within {self.file_context['date_start']} to {self.file_context['date_end']} for queries about this data.
 """
+
+
+def list_sessions(limit: int = 20) -> List[Dict]:
+    """
+    List recent chat sessions.
+
+    Args:
+        limit: Maximum number of sessions to return
+
+    Returns:
+        List of session dicts with id, title, message_count, updated_at
+    """
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(
+                    """
+                    SELECT id, title, message_count, updated_at
+                    FROM chat_sessions
+                    WHERE COALESCE(message_count, 0) > 0
+                    ORDER BY updated_at DESC
+                    LIMIT %s
+                    """,
+                    [limit]
+                )
+                rows = cur.fetchall()
+
+        return [
+            {
+                "id": str(row["id"]),
+                "title": row["title"] or "New conversation",
+                "message_count": row["message_count"] or 0,
+                "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None
+            }
+            for row in rows
+        ]
+    except Exception as e:
+        print(f"Warning: Could not list sessions: {e}")
+        return []
 
 
 # In-memory session store (for file context persistence within a session)
