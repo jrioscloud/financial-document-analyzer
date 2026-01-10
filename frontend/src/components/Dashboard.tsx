@@ -5,6 +5,7 @@ import { getStats, type StatsResponse } from "@/lib/api";
 import { SpendingPieChart } from "./charts/SpendingPieChart";
 import { SpendingBarChart } from "./charts/SpendingBarChart";
 import { SpendingLineChart } from "./charts/SpendingLineChart";
+import { SpendingFlowChart } from "./charts/SpendingFlowChart";
 
 interface DashboardProps {
   onUploadClick?: () => void;
@@ -212,6 +213,11 @@ export function Dashboard({ onUploadClick }: DashboardProps) {
       {/* Full-width Line Chart */}
       {stats.monthly_spending && stats.monthly_spending.length > 1 && (
         <SpendingLineChart data={stats.monthly_spending} />
+      )}
+
+      {/* Spending Flow (Sankey) Chart */}
+      {stats.category_amounts && stats.category_amounts.length >= 3 && (
+        <SpendingFlowChart data={stats.category_amounts} />
       )}
 
       {/* Recent Activity */}
