@@ -52,7 +52,7 @@ export function IconSidebar({ activeView, onViewChange }: IconSidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<ViewType | null>(null);
 
   return (
-    <div className="relative z-10 w-16 border-r border-border/50 glass-strong flex flex-col">
+    <div className="relative z-50 w-16 border-r border-border/50 glass-strong flex flex-col">
       {/* Logo */}
       <div className="p-3 flex justify-center border-b border-border/50">
         <Link href="/" className="group">
@@ -90,8 +90,8 @@ export function IconSidebar({ activeView, onViewChange }: IconSidebarProps) {
 
               {/* Tooltip */}
               {hoveredItem === item.id && (
-                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50 animate-fade-in">
-                  <div className="px-2.5 py-1.5 rounded-lg bg-popover border border-border/50 shadow-lg">
+                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 z-[100] animate-fade-in pointer-events-none">
+                  <div className="px-2.5 py-1.5 rounded-lg bg-popover border border-border/50 shadow-xl">
                     <span className="text-xs font-medium text-foreground whitespace-nowrap">
                       {item.label}
                     </span>
